@@ -15,4 +15,4 @@ jobs:
     - name: Fetch latest commit
       uses: actions/checkout@v4
     - name: Build app
-      run: docker-compose up --force-recreate --build --detach
+      run: docker compose up --force-recreate --build --detach
