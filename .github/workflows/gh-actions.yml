@@ -1,0 +1,23 @@
+name: Qseer application
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: self-hosted
+    steps:
+    - name: Fetch latest commit
+      uses: actions/checkout@v4
+    - name: Install dependencies
+      run: |
+        python3.12 -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip3.12 install -r requirements.txt; fi
+    - name: Run web application
+      run: |
+        uvicorn app:app --host 0.0.0.0 --port 80
