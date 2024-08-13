@@ -21,3 +21,5 @@ jobs:
       run: echo "$ENV_FILE" > .env
     - name: Build app
       run: docker compose up --force-recreate --build --detach
+      env:
+        WEB_CONCURRENCY: ${{ vars.WEB_CONCURRENCY }}

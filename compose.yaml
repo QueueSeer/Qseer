@@ -3,5 +3,7 @@ services:
     build: .
     image: backend-image
     container_name: backend
+    environment:
+      - WEB_CONCURRENCY
     ports:
       - "8000:8000"
