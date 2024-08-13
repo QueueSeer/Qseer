@@ -31,7 +31,7 @@ app.include_router(api_v1)
 
 
 @app.get("/", response_class=HTMLResponse)
-def root():
+async def root():
     return '''\
 <style>
     a {
@@ -41,12 +41,16 @@ def root():
         border-radius: 0.5em;
         text-decoration: none;
         color: black;
+        background-color: white;
         transition: 0.2s;
+    }
+
+    a:hover {
+        background-color: #f0f0f0;
     }
 
     a:active {
         background-color: #f0f0f0;
-        color: black;
         transform: scale(0.98);
     }
 </style>
