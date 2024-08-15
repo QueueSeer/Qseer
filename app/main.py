@@ -55,7 +55,7 @@ async def root():
     }
 </style>
 <div style='display: flex; flex-direction: column; align-items: center;'>
-    <h1>Documentations</h1><br>
+    <h1>Nice Documentations</h1><br>
     <a href='./docs'>Interactive API docs</a>
     <a href='./redoc'>Alternative API docs</a>
 </div>
