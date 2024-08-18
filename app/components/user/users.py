@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
-from ..database import get_session
+from app.database import get_session
 
 router = APIRouter(prefix="/users", tags=["users"])
 security = HTTPBearer(bearerFormat="test", scheme_name="JWT", description="JWT Token")

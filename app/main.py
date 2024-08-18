@@ -1,11 +1,11 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from . import (
-    database,
-    user
+from app.components import get_api_router
+from app import (
+    database
 )
 
 
@@ -25,9 +25,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"]
 )
-api_v1 = APIRouter(prefix="/api/v1")
-api_v1.include_router(user.router)
-app.include_router(api_v1)
+app.include_router(get_api_router())
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -55,7 +53,7 @@ async def root():
     }
 </style>
 <div style='display: flex; flex-direction: column; align-items: center;'>
-    <h1>Nice Documentations</h1><br>
+    <h1>Documentations</h1><br>
     <a href='./docs'>Interactive API docs</a>
     <a href='./redoc'>Alternative API docs</a>
 </div>

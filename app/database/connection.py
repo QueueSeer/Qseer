@@ -1,8 +1,10 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-from .models import Base
 
-engine = create_engine("sqlite:///./database.db", echo=True)
+from app.core.config import settings
+from .models import *
+
+engine = create_engine(settings.DATABASE_URL, echo=settings.DEVELOPMENT)
 
 
 def get_session():
