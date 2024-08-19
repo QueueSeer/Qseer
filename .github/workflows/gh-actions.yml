@@ -24,4 +24,4 @@ jobs:
       env:
         WEB_CONCURRENCY: ${{ vars.WEB_CONCURRENCY }}
     - name: Check if app is running
-      run: sleep 5 && docker compose ps --services --status=exited | grep '^.*$'
+      run: sleep 5 && docker compose ps --services --status=exited | grep -e '^.*$'
