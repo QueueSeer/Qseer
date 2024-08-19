@@ -20,22 +20,12 @@ jobs:
         ENV_FILE: ${{ secrets.ENV_FILE }}
       run: echo "$ENV_FILE" > .env
     - name: Build app
-      id: composeUp
       run: docker compose up --force-recreate --build --detach
       env:
         WEB_CONCURRENCY: ${{ vars.WEB_CONCURRENCY }}
     - name: Check if app is running
+      id: checkAlive
       run: sleep 5 && docker compose ps --services --status=exited | grep -v -e '^.*$'
     - name: Show failed logs
-      # if: failure() && steps.composeUp.outcome == 'failure'
+      if: failure() && steps.checkAlive.outcome == 'failure'
       run: docker compose logs
-    - name: Dump job context
-      if: always()
-      env:
-        JOB_CONTEXT: ${{ toJson(job) }}
-      run: echo "$JOB_CONTEXT"
-    - name: Dump steps context
-      if: always()
-      env:
-        STEPS_CONTEXT: ${{ toJson(steps) }}
-      run: echo "$STEPS_CONTEXT"
