@@ -28,7 +28,10 @@ jobs:
       run: sleep 5 && docker compose ps --services --status=exited | grep -v -e '^.*$'
     - name: Show failed logs
       # if: failure() && steps.composeUp.outcome == 'failure'
+      if: always()
       run: docker compose logs
-    - run: |
+    - name: debug
+      if: always()
+      run: |
         echo "${{ steps.composeUp.outcome }}"
         echo "&{{ failure() }}"
