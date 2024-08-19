@@ -33,5 +33,4 @@ jobs:
     - name: debug
       if: always()
       run: |
-        echo "${{ steps.composeUp.outcome }}"
-        echo "&{{ failure() }}"
+        echo "${{ steps }}"
