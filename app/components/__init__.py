@@ -1,12 +1,11 @@
 import functools as ft
-import os
 import importlib
-from glob import glob
+import pkgutil
 
 from fastapi import APIRouter
 
 
-def get_api_router(*, prefix="/api", package="app.components", **kwargs):
+def get_api_router(*, prefix="/api", **kwargs):
     '''
     Get APIRouter that automatically include routers from each subpackages of `package`.
     Assume that each packages have APIRouter named **router**.
@@ -18,11 +17,8 @@ def get_api_router(*, prefix="/api", package="app.components", **kwargs):
     [FastAPI reference - APIRouter class](https://fastapi.tiangolo.com/reference/apirouter/)
     '''
     api_router = APIRouter(prefix=prefix, *kwargs)
-    for name in glob(os.path.dirname(__file__) + "/*"):
-        basename = os.path.basename(name)
-        if basename.endswith(".py") or basename.startswith("_"):
-            continue
-        module = importlib.import_module(f".{basename}", package)
+    for _, module_name, _ in pkgutil.walk_packages(__path__):
+        module = importlib.import_module(f".{module_name}", __package__)
         try:
             api_router.include_router(module.router)
         except AttributeError:
