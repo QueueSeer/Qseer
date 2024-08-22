@@ -25,7 +25,7 @@ jobs:
         WEB_CONCURRENCY: ${{ vars.WEB_CONCURRENCY }}
     - name: Check if app is running
       id: checkAlive
-      run: sleep 5 && docker compose ps --services --status=exited | grep -v -e '^.*$'
+      run: sleep 5 && docker compose ps --services --status=exited | grep '\b\b' && exit 1
     - name: Show failed logs
       if: failure() && steps.checkAlive.outcome == 'failure'
       run: docker compose logs
