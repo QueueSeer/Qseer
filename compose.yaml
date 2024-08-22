@@ -3,6 +3,7 @@ services:
     build: .
     image: backend-image
     container_name: backend
+    env_file: .env
     environment:
       - WEB_CONCURRENCY
     ports:
