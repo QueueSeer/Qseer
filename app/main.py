@@ -5,7 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.components import get_api_router
 from app import (
-    database
+    database,
+    objectStorage
 )
 
 

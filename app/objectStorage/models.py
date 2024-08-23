@@ -1,0 +1,1 @@
+print("Run From Obj-storage-module")
