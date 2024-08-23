@@ -1,19 +1,12 @@
-from dataplane import s3_upload
-import os
 import boto3
 from botocore.client import Config
-from botocore.exceptions import ClientError
-from dotenv import load_dotenv
-import json
-import os, sys
-from PIL import Image
+from app.core.config import settings
+import os
 
-
-load_dotenv()
-AccountID = os.environ["secret_dp_S3_ACCOUNT_ID"]
-Bucket = os.environ["main_BUCKET_NAME"]
-ClientAccessKey = os.environ["secret_dp_S3_ACCESS_KEY"]
-ClientSecret = os.environ["secret_dp_S3_SECRET"]
+AccountID = settings.secret_dp_S3_ACCOUNT_ID
+Bucket = settings.main_BUCKET_NAME
+ClientAccessKey = settings.secret_dp_S3_ACCESS_KEY
+ClientSecret = settings.secret_dp_S3_SECRET
 ConnectionUrl = f"https://{AccountID}.r2.cloudflarestorage.com"
 
 

@@ -14,6 +14,12 @@ class Settings(BaseSettings):
     PG_PORT: int = 5432
     PG_DATABASE: str = "test"
 
+    secret_dp_S3_ACCOUNT_ID : str
+    secret_dp_S3_ACCESS_KEY : str
+    secret_dp_S3_SECRET : str
+
+    main_BUCKET_NAME :str
+
     @computed_field
     @property
     def DATABASE_URL(self) -> URL:
