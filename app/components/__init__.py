@@ -1,7 +1,6 @@
 import functools as ft
 import importlib
 import pkgutil
-
 from fastapi import APIRouter
 
 
@@ -15,6 +14,9 @@ def get_api_router(*, prefix="/api", **kwargs):
 
     Read more about it in the
     [FastAPI reference - APIRouter class](https://fastapi.tiangolo.com/reference/apirouter/)
+
+    ------
+    Do not name new package with existing name.
     '''
     api_router = APIRouter(prefix=prefix, *kwargs)
     for _, module_name, _ in pkgutil.walk_packages(__path__):
