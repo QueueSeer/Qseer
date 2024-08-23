@@ -2,7 +2,6 @@ from typing import Annotated
 from fastapi import APIRouter, Depends , File, UploadFile, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
-from tempfile import NamedTemporaryFile
 import os
 
 from app.database import get_session
@@ -19,7 +18,6 @@ async def test():
 
 @router.post("/upload",deprecated=not settings.DEVELOPMENT)
 def upload_file(file: UploadFile = File(...)):
-    temp = NamedTemporaryFile(delete=False)
     try:
         contents = file.file.read()
         file.file.seek(0)
