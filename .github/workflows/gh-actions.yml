@@ -15,9 +15,19 @@ jobs:
     steps:
     - name: Fetch latest commit
       uses: actions/checkout@v4
-    - name: Create .env
+    - name: Create .env Dev 
+      env:
+        ENV_FILE_DEV: ${{ secrets.ENV_FILE_DEV }}
+      env:
+        DEV_RUNNER: ${{ env.DEV_RUNNER }}
+      if : ${{ env.DEV_RUNNER == runner.name }}
+      run: echo "$ENV_FILE_DEV" > .env
+    - name: Create .env 
       env:
         ENV_FILE: ${{ secrets.ENV_FILE }}
+      env:
+        DEV_RUNNER: ${{ env.DEV_RUNNER }}
+      if : ${{ env.DEV_RUNNER != runner.name }}
       run: echo "$ENV_FILE" > .env
     - name: Build app
       run: docker compose up --force-recreate --build --detach
