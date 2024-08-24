@@ -32,33 +32,33 @@ app.include_router(get_api_router())
 
 @app.get("/", response_class=HTMLResponse)
 async def root():
-    return FileResponse('static/index.html')
-app.mount('/',StaticFiles(directory='static', html=True), name='static')
-#     return '''\
-# <style>
-#     a {
-#         margin: 1em;
-#         padding: 1em;
-#         border: 2px solid #333333;
-#         border-radius: 0.5em;
-#         text-decoration: none;
-#         color: black;
-#         background-color: white;
-#         transition: 0.2s;
-#     }
+    #return FileResponse('static/index.html')
+#app.mount('/',StaticFiles(directory='static', html=True), name='static')
+    return '''\
+<style>
+    a {
+        margin: 1em;
+        padding: 1em;
+        border: 2px solid #333333;
+        border-radius: 0.5em;
+        text-decoration: none;
+        color: black;
+        background-color: white;
+        transition: 0.2s;
+    }
 
-#     a:hover {
-#         background-color: #f0f0f0;
-#     }
+    a:hover {
+        background-color: #f0f0f0;
+    }
 
-#     a:active {
-#         background-color: #f0f0f0;
-#         transform: scale(0.98);
-#     }
-# </style>
-# <div style='display: flex; flex-direction: column; align-items: center;'>
-#     <h1>Documentations</h1><br>
-#     <a href='./docs'>Interactive API docs</a>
-#     <a href='./redoc'>Alternative API docs</a>
-# </div>
-# '''
+    a:active {
+        background-color: #f0f0f0;
+        transform: scale(0.98);
+    }
+</style>
+<div style='display: flex; flex-direction: column; align-items: center;'>
+    <h1>Documentations</h1><br>
+    <a href='./docs'>Interactive API docs</a>
+    <a href='./redoc'>Alternative API docs</a>
+</div>
+'''
