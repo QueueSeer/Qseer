@@ -2,6 +2,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends , File, UploadFile, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
+import urllib.parse
 import os
 
 from app.database import get_session
@@ -22,11 +23,11 @@ async def upload_file(file: UploadFile = File(...)):
         get_s3_connect().upload_fileobj(file.file, get_s3_main_Bucket(), file.filename)
     except Exception:
         raise HTTPException(status_code=500, detail='Something went wrong')
-    
-    return [{"filename": file.filename},{"fileType":file.content_type}]
+    custom_url = "https://storage.qseer.app/"
+    return [{"filename": file.filename},{"fileType":file.content_type},{"url": custom_url + urllib.parse.quote(file.filename)}]
 
 @router.get("/get_url",deprecated=not settings.DEVELOPMENT)
 async def get_url(file_name:str):
     custom_url = "https://storage.qseer.app/"
-    return [{"url": custom_url + file_name}]
+    return [{"url": custom_url + urllib.parse.quote(file_name)}]
 #.getSignedUrl
