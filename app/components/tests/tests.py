@@ -17,10 +17,16 @@ async def test():
     return [{"test": "Test"}]
 
 @router.post("/upload",deprecated=not settings.DEVELOPMENT)
-def upload_file(file: UploadFile = File(...)):
+async def upload_file(file: UploadFile = File(...)):
     try:
         get_s3_connect().upload_fileobj(file.file, get_s3_main_Bucket(), file.filename)
     except Exception:
         raise HTTPException(status_code=500, detail='Something went wrong')
     
     return [{"filename": file.filename},{"fileType":file.content_type}]
+
+@router.get("/get_url",deprecated=not settings.DEVELOPMENT)
+async def get_url(file_name:str):
+    custom_url = "https://storage.qseer.app/"
+    return [{"url": custom_url + file_name}]
+#.getSignedUrl
