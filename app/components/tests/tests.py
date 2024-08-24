@@ -15,10 +15,16 @@ security = HTTPBearer(bearerFormat="test", scheme_name="JWT", description="JWT T
 
 @router.get("/",deprecated=not settings.DEVELOPMENT)
 async def test():
+    if settings.DEVELOPMENT == False :
+        raise HTTPException(status_code=503, detail='only available on dev server')
+    
     return [{"test": "Test"}]
 
 @router.post("/upload",deprecated=not settings.DEVELOPMENT)
 async def upload_file(file: UploadFile = File(...)):
+    if settings.DEVELOPMENT == False :
+        raise HTTPException(status_code=503, detail='only available on dev server')
+    
     try:
         get_s3_connect().upload_fileobj(file.file, get_s3_main_Bucket(), file.filename)
     except Exception:
@@ -28,5 +34,7 @@ async def upload_file(file: UploadFile = File(...)):
 
 @router.get("/get_url",deprecated=not settings.DEVELOPMENT)
 async def get_url(file_name:str):
+    if settings.DEVELOPMENT == False :
+        raise HTTPException(status_code=503, detail='only available on dev server')
     custom_url = "https://storage.qseer.app/"
     return [{"url": custom_url + urllib.parse.quote(file_name)}]
