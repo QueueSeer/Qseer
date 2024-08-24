@@ -19,12 +19,8 @@ async def test():
 @router.post("/upload",deprecated=not settings.DEVELOPMENT)
 def upload_file(file: UploadFile = File(...)):
     try:
-        contents = file.file.read()
-        file.file.seek(0)
         get_s3_connect().upload_fileobj(file.file, get_s3_main_Bucket(), file.filename)
     except Exception:
         raise HTTPException(status_code=500, detail='Something went wrong')
-    finally:
-        file.file.close()
-
+    
     return [{"filename": file.filename},{"fileType":file.content_type}]
