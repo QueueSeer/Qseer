@@ -30,4 +30,3 @@ async def upload_file(file: UploadFile = File(...)):
 async def get_url(file_name:str):
     custom_url = "https://storage.qseer.app/"
     return [{"url": custom_url + urllib.parse.quote(file_name)}]
-#.getSignedUrl
