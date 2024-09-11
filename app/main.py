@@ -1,8 +1,8 @@
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 
 from app.components import get_api_router
 from app import (
@@ -32,8 +32,6 @@ app.include_router(get_api_router())
 
 @app.get("/", response_class=HTMLResponse)
 async def root():
-    #return FileResponse('static/index.html')
-#app.mount('/',StaticFiles(directory='static', html=True), name='static')
     return '''\
 <style>
     a {
