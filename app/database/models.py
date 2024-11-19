@@ -1,18 +1,20 @@
 import datetime as dt
 import re
 from decimal import Decimal
-from typing import Annotated
+from typing import Annotated, Any
 
 from sqlalchemy import (
     BigInteger,
     CHAR,
     CheckConstraint,
+    Column,
     DDL,
     FetchedValue,
     ForeignKey,
     ForeignKeyConstraint,
     Identity,
     Numeric,
+    Table,
     Text,
     TIMESTAMP,
     Time,
@@ -23,17 +25,15 @@ from sqlalchemy import (
 from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
-    composite,
     mapped_column,
     relationship,
 )
-from sqlalchemy.dialects.postgresql import SMALLINT
+from sqlalchemy.dialects.postgresql import SMALLINT, JSONB
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.engine import Connection
 from sqlalchemy.sql import compiler
 from sqlalchemy.schema import CreateTable
 
-from .composite import Name
 
 # Overwrite FK_ON_DELETE to allow set null one of the composite key
 compiler.FK_ON_DELETE = re.compile(
@@ -58,9 +58,15 @@ coin = Annotated[
 ]
 
 userFK = Annotated[
-    int,
+    int | None,
     mapped_column(
         ForeignKey("userAccount.id", ondelete='SET NULL')
+    )
+]
+seerFK = Annotated[
+    int | None,
+    mapped_column(
+        ForeignKey("seer.id", ondelete='SET NULL')
     )
 ]
 intPK_userFK = Annotated[
@@ -70,225 +76,412 @@ intPK_userFK = Annotated[
         primary_key=True
     )
 ]
+intPK_seerFK = Annotated[
+    int,
+    mapped_column(
+        ForeignKey("seer.id", ondelete="CASCADE"),
+        primary_key=True
+    )
+]
 
 
 class Base(DeclarativeBase):
     pass
 
 
+FollowSeer = Table(
+    "followSeer",
+    Base.metadata,
+    Column(
+        "user_id", ForeignKey("userAccount.id", ondelete="CASCADE"),
+        primary_key=True
+    ),
+    Column(
+        "seer_id", ForeignKey("seer.id", ondelete="CASCADE"),
+        primary_key=True
+    )
+)
+
+
 class User(Base):
     __tablename__ = "userAccount"
 
     id: Mapped[intPK] = mapped_column(Identity())
-    name: Mapped[Name] = composite(
-        mapped_column("first_name", Text()),
-        mapped_column("middle_name", Text(), nullable=True),
-        mapped_column("last_name", Text())
-    )
+    username: Mapped[strText] = mapped_column(unique=True)
+    display_name: Mapped[strText]
+    first_name: Mapped[strText]
+    last_name: Mapped[strText]
     role: Mapped[strText]
-    email: Mapped[strText]
+    email: Mapped[strText] = mapped_column(unique=True)
+    password: Mapped[strText]
     birthdate: Mapped[dt.date | None]
     phone_number: Mapped[str | None] = mapped_column(CHAR(10), nullable=True)
-    coins: Mapped[coin]
+    coins: Mapped[coin] = mapped_column(server_default=text("0"))
+    image: Mapped[strText] = mapped_column(server_default=text("''"))
+    is_active: Mapped[bool] = mapped_column(server_default=text("true"))
     date_created: Mapped[timestamp] = mapped_column(server_default=func.now())
-    password: Mapped[strText]
+    properties: Mapped[dict[str, Any]] = mapped_column(
+        JSONB, server_default=text("'{}'"))
 
-    # back_populates: name of the relationship attribute in the other model class
-    config: Mapped["UserConfig"] = relationship(
-        back_populates="user",
-        cascade="all, delete-orphan",
-        passive_deletes="all"
-    )
-    schedule: Mapped["Schedule | None"] = relationship(
-        back_populates="user",
-        cascade="all, delete-orphan",
-        passive_deletes="all"
-    )
-    package: Mapped[list["Package"]] = relationship(
+    # back_populates: name of the relationship attribute in the other model
+    seer: Mapped["Seer | None"] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
         passive_deletes=True
-    )
-    # Appointment that this user made
-    appointing: Mapped[list["Appointment"]] = relationship(
+    )  # on delete cascade
+    following: Mapped[list["Seer"]] = relationship(
+        secondary=FollowSeer,
+        back_populates="followers",
+        cascade="all, delete-orphan",
+        passive_deletes=True
+    )  # on delete cascade
+    appointments: Mapped[list["Appointment"]] = relationship(
         back_populates="client",
         passive_deletes=True
-    )
-    # Appointment that other user made
-    appointed: Mapped[list["Appointment"]] = relationship(
-        back_populates="seer",
+    )  # on delete set null
+    question_answers: Mapped[list["QuestionAnswer"]] = relationship(
+        back_populates="client",
         passive_deletes=True
-    )
+    )  # on delete set null
     bids: Mapped[list["BidInfo"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
         passive_deletes=True
-    )
-    post: Mapped[list["Post"]] = relationship(
-        back_populates="user",
+    )  # on delete cascade
+    sent_transactions: Mapped[list["Transaction"]] = relationship(
+        back_populates="sender",
         passive_deletes=True
-    )
-    comment: Mapped[list["Comment"]] = relationship(
-        back_populates="user",
+    )  # on delete set null
+    received_transactions: Mapped[list["Transaction"]] = relationship(
+        back_populates="receiver",
         passive_deletes=True
-    )
+    )  # on delete set null
+    reports: Mapped[list["Report"]] = relationship(
+        back_populates="reporter",
+        passive_deletes=True
+    )  # on delete set null
+    notification: Mapped[list["NotificationHistory"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+        passive_deletes=True
+    )  # on delete cascade
 
     def __repr__(self) -> str:
         return f"User(id={self.id!r})"
 
 
-class UserConfig(Base):
-    __tablename__ = "userConfig"
+class Seer(Base):
+    __tablename__ = "seer"
 
-    user_id: Mapped[intPK_userFK]
-    email_notification: Mapped[bool] = mapped_column(
-        server_default=text("false")
+    id: Mapped[intPK_userFK]
+    experience: Mapped[dt.date | None] = mapped_column(
+        server_default=text("null")
     )
-    line_notification: Mapped[bool] = mapped_column(
-        server_default=text("false")
+    description: Mapped[strText] = mapped_column(server_default=text("''"))
+    date_created: Mapped[timestamp] = mapped_column(server_default=func.now())
+    is_available: Mapped[bool] = mapped_column(server_default=text("true"))
+    is_active: Mapped[bool] = mapped_column(server_default=text("true"))
+    verified_at: Mapped[timestamp | None] = mapped_column(
+        server_default=text("null")
+    )
+    properties: Mapped[dict[str, Any]] = mapped_column(
+        JSONB, server_default=text("'{}'")
     )
 
     user: Mapped[User] = relationship(
-        back_populates="config",
+        back_populates="seer",
         single_parent=True
     )
+    followers: Mapped[list[User]] = relationship(
+        secondary=FollowSeer,
+        back_populates="following",
+        cascade="all, delete-orphan",
+        passive_deletes=True
+    )
+    schedule: Mapped[list["Schedule"]] = relationship(
+        back_populates="seer",
+        cascade="all, delete-orphan",
+        passive_deletes=True
+    )
+    day_offs: Mapped[list["DayOff"]] = relationship(
+        back_populates="seer",
+        cascade="all, delete-orphan",
+        passive_deletes=True
+    )
+    withdrawals: Mapped[list["Withdrawal"]] = relationship(
+        back_populates="seer",
+        cascade="all, delete-orphan",
+        passive_deletes=True
+    )
+    fortune_packages: Mapped[list["FortunePackage"]] = relationship(
+        back_populates="seer",
+        cascade="all, delete-orphan",
+        passive_deletes=True
+    )
+    question_packages: Mapped[list["QuestionPackage"]] = relationship(
+        back_populates="seer",
+        cascade="all, delete-orphan",
+        passive_deletes=True
+    )
+    appointments: Mapped[list["Appointment"]] = relationship(
+        back_populates="seer",
+        passive_deletes=True
+    )
+    question_answers: Mapped[list["QuestionAnswer"]] = relationship(
+        back_populates="seer",
+        passive_deletes=True
+    )
+    auctions: Mapped[list["AuctionInfo"]] = relationship(
+        back_populates="seer",
+        passive_deletes="all"
+    )  # on delete restrict
 
 
 class Schedule(Base):
-    __tablename__ = "userSchedule"
+    __tablename__ = "seerSchedule"
 
-    user_id: Mapped[intPK_userFK]
-    start_time: Mapped[dt.time] = mapped_column(
-        Time(timezone=True), server_default=text("'00:00:00'")
-    )
-    end_time: Mapped[dt.time] = mapped_column(
-        Time(timezone=True), server_default=text("'00:00:00'")
-    )
-    # Mon-Sun, 0 = Off, 1 = On
-    # Example: 124 = 0b1111100 = Off Sat & Sun
-    recurring_days_off: Mapped[int] = mapped_column(
-        SMALLINT, server_default=text("0")
-    )
+    seer_id: Mapped[intPK_seerFK]
+    id: Mapped[intPK] = mapped_column(FetchedValue())
+    start_time: Mapped[dt.time] = mapped_column(Time(timezone=True))
+    end_time: Mapped[dt.time] = mapped_column(Time(timezone=True))
+    # 0: Monday, 1: Tuesday, ..., 6: Sunday
+    day: Mapped[int] = mapped_column(SMALLINT)
 
-    user: Mapped[User] = relationship(
-        back_populates="schedule", single_parent=True
-    )
-    days_off: Mapped[list["DaysOff"]] = relationship(
-        cascade="all, delete-orphan", passive_deletes=True
-    )
+    seer: Mapped[Seer] = relationship(back_populates="schedule")
 
 
-class DaysOff(Base):
-    __tablename__ = "daysOff"
+class DayOff(Base):
+    __tablename__ = "dayOff"
 
-    schedule_id: Mapped[intPK] = mapped_column(
-        ForeignKey(Schedule.user_id, ondelete="CASCADE")
-    )
+    seer_id: Mapped[intPK_seerFK]
     day_off: Mapped[dt.date] = mapped_column(primary_key=True)
 
+    seer: Mapped[Seer] = relationship(back_populates="day_offs")
 
-class Package(Base):
-    __tablename__ = "package"
 
-    user_id: Mapped[intPK_userFK]
+class Withdrawal(Base):
+    __tablename__ = "withdrawal"
+
+    id: Mapped[intPK] = mapped_column(Identity())
+    requester_id: Mapped[int] = mapped_column(
+        ForeignKey(Seer.id, ondelete="CASCADE")
+    )
+    amount: Mapped[coin]
+    status: Mapped[strText] = mapped_column(server_default=text("'pending'"))
+    date_created: Mapped[timestamp] = mapped_column(server_default=func.now())
+
+    seer: Mapped[Seer] = relationship(back_populates="withdrawals")
+
+
+class FortunePackage(Base):
+    __tablename__ = "fortunePackage"
+
+    seer_id: Mapped[intPK_seerFK]
     id: Mapped[intPK] = mapped_column(FetchedValue())
     name: Mapped[strText]
     price: Mapped[coin]
     duration: Mapped[dt.timedelta] = mapped_column(server_default=text("'0s'"))
     description: Mapped[strText] = mapped_column(server_default=text("''"))
+    question_limit: Mapped[int] = mapped_column(server_default=text("0"))
+    status: Mapped[strText] = mapped_column(server_default=text("'draft'"))
+    foretell_channel: Mapped[strText] = mapped_column(
+        server_default=text("'chat'")
+    )
+    category: Mapped[strText | None] = mapped_column(
+        server_default=text("null")
+    )
+    # None, None, ..., Telephone, Birthdate, Name
+    required_data: Mapped[int] = mapped_column(
+        SMALLINT, server_default=text("0")
+    )
+    image: Mapped[strText] = mapped_column(server_default=text("''"))
+    date_created: Mapped[timestamp] = mapped_column(server_default=func.now())
 
-    user: Mapped[User] = relationship(back_populates="package")
-    appointment: Mapped[list["Appointment"]] = relationship(
+    seer: Mapped[Seer] = relationship(back_populates="fortune_packages")
+    appointments: Mapped[list["Appointment"]] = relationship(
         back_populates="package",
         passive_deletes="all"
     )
 
 
-class Appointment(Base):
-    __tablename__ = "appointment"
+class QuestionPackage(Base):
+    __tablename__ = "questionPackage"
+
+    seer_id: Mapped[intPK_seerFK]
+    id: Mapped[intPK] = mapped_column(FetchedValue())
+    price: Mapped[coin]
+    description: Mapped[strText] = mapped_column(server_default=text("''"))
+    enable_at: Mapped[timestamp | None] = mapped_column(
+        server_default=func.now()
+    )
+    stack_limit: Mapped[int | None] = mapped_column(server_default=text("100"))
+    image: Mapped[strText] = mapped_column(server_default=text("''"))
+    date_created: Mapped[timestamp] = mapped_column(server_default=func.now())
+
+    seer: Mapped[Seer] = relationship(back_populates="question_packages")
+    question_answers: Mapped[list["QuestionAnswer"]] = relationship(
+        back_populates="package",
+        passive_deletes="all"
+    )
+
+
+class Activity(Base):
+    __tablename__ = "activity"
 
     id: Mapped[intPK] = mapped_column(BigInteger, Identity())
-    client_id: Mapped[userFK | None]
-    seer_id: Mapped[userFK | None]
-    package_id: Mapped[int | None]
+    type: Mapped[strText]
+    date_created: Mapped[timestamp] = mapped_column(server_default=func.now())
+
+    __mapper_args__ = {
+        "polymorphic_identity": "activity",
+        "polymorphic_on": "type",
+    }
+
+
+class Appointment(Activity):
+    __tablename__ = "appointment"
+
+    id: Mapped[intPK] = mapped_column(
+        ForeignKey(Activity.id, ondelete="CASCADE")
+    )
+    client_id: Mapped[userFK]
+    seer_id: Mapped[seerFK]
+    f_package_id: Mapped[int | None]
     start_time: Mapped[timestamp] = mapped_column(server_default=func.now())
     end_time: Mapped[timestamp] = mapped_column(server_default=func.now())
     status: Mapped[strText]
+    confirmation_code: Mapped[strText] = mapped_column(
+        server_default=text("''")
+    )
 
-    client: Mapped[User] = relationship(
-        back_populates="appointing",
-        foreign_keys="client_id"
-    )
-    seer: Mapped[User] = relationship(
-        back_populates="appointed",
-        foreign_keys="seer_id"
-    )
-    package: Mapped[Package] = relationship(
-        back_populates="appointment",
-        foreign_keys="[seer_id, package_id]"
-    )
-    review: Mapped["Review | None"] = relationship(
-        back_populates="appointment",
+    questions: Mapped[list["AppointmentQuestions"]] = relationship(
         cascade="all, delete-orphan",
-        passive_deletes=True
+        passive_deletes="all"
     )
-    auction_info: Mapped["AuctionInfo | None"] = relationship(
-        back_populates="appointment",
-        cascade="all, delete-orphan",
-        passive_deletes=True
+    client: Mapped[User | None] = relationship(
+        back_populates="appointments"
     )
+    seer: Mapped[Seer | None] = relationship(
+        back_populates="appointments"
+    )
+    package: Mapped[FortunePackage | None] = relationship(
+        back_populates="appointments",
+        foreign_keys="[seer_id, f_package_id]"
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "appointment"
+    }
 
     __table_args__ = (
         ForeignKeyConstraint(
-            ["seer_id", "package_id"], [Package.user_id, Package.id],
-            ondelete="SET NULL (package_id)",
+            ["seer_id", "f_package_id"], [
+                FortunePackage.seer_id, FortunePackage.id],
+            ondelete="SET NULL (f_package_id)",
         ),
+        CheckConstraint(
+            "client_id IS NOT NULL and seer_id IS NOT NULL",
+            name="client_seer_not_null"
+        )
     )
 
 
-class Review(Base):
-    __tablename__ = "review"
+class AppointmentQuestions(Base):
+    __tablename__ = "appointmentQuestions"
 
-    appointment_id: Mapped[int] = mapped_column(
-        ForeignKey(Appointment.id, ondelete="CASCADE"), primary_key=True
+    appointment_id: Mapped[intPK] = mapped_column(
+        ForeignKey(Appointment.id, ondelete="CASCADE")
     )
-    score: Mapped[int] = mapped_column(
-        SMALLINT, CheckConstraint("0 <= score AND score <= 5")
+    id: Mapped[intPK] = mapped_column(FetchedValue())
+    question: Mapped[strText]
+
+
+class QuestionAnswer(Activity):
+    __tablename__ = "questionAnswer"
+
+    id: Mapped[intPK] = mapped_column(
+        ForeignKey(Activity.id, ondelete="CASCADE")
     )
-    text: Mapped[strText] = mapped_column(server_default=text("''"))
-    date_created: Mapped[timestamp] = mapped_column(server_default=func.now())
+    client_id: Mapped[userFK]
+    seer_id: Mapped[seerFK]
+    q_package_id: Mapped[int | None]
+    question: Mapped[strText]
+    question_at: Mapped[timestamp] = mapped_column(server_default=func.now())
+    answer: Mapped[strText | None]
+    answer_at: Mapped[timestamp | None] = mapped_column(
+        server_default=text("null")
+    )
 
-    appointment: Mapped[Appointment] = relationship(
-        back_populates="review", single_parent=True
+    client: Mapped[User | None] = relationship(
+        back_populates="question_answers"
+    )
+    seer: Mapped[Seer | None] = relationship(
+        back_populates="question_answers"
+    )
+    package: Mapped[QuestionPackage | None] = relationship(
+        back_populates="question_answers",
+        foreign_keys="[seer_id, q_package_id]"
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "questionAnswer"
+    }
+
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["seer_id", "q_package_id"], [
+                FortunePackage.seer_id, FortunePackage.id],
+            ondelete="SET NULL (q_package_id)",
+        ),
+        CheckConstraint(
+            "client_id IS NOT NULL and seer_id IS NOT NULL",
+            name="client_seer_not_null"
+        )
     )
 
 
-class AuctionInfo(Base):
+class AuctionInfo(Activity):
     __tablename__ = "auctionInfo"
 
-    appointment_id: Mapped[int] = mapped_column(
-        ForeignKey(Appointment.id, ondelete="CASCADE"), primary_key=True
+    id: Mapped[intPK] = mapped_column(
+        ForeignKey(Activity.id, ondelete="CASCADE")
     )
+    seer_id: Mapped[int] = mapped_column(
+        ForeignKey(Seer.id, ondelete="RESTRICT")
+    )
+    name: Mapped[strText]
+    short_description: Mapped[strText] = mapped_column(
+        server_default=text("''")
+    )
+    description: Mapped[strText] = mapped_column(server_default=text("''"))
+    image: Mapped[strText] = mapped_column(server_default=text("''"))
     start_time: Mapped[timestamp] = mapped_column(server_default=func.now())
     end_time: Mapped[timestamp] = mapped_column(server_default=func.now())
-    initial_bid: Mapped[coin]
-    min_increment: Mapped[coin]
-
-    appointment: Mapped[Appointment] = relationship(
-        back_populates="auction_info", single_parent=True
+    appoint_start_time: Mapped[timestamp] = mapped_column(
+        server_default=func.now()
     )
+    appoint_end_time: Mapped[timestamp] = mapped_column(
+        server_default=func.now()
+    )
+    initial_bid: Mapped[coin] = mapped_column(server_default=text("20"))
+    min_increment: Mapped[coin] = mapped_column(server_default=text("10"))
+
+    seer: Mapped[Seer] = relationship(back_populates="auctions")
     bid_info: Mapped[list["BidInfo"]] = relationship(
         back_populates="auction",
-        cascade="all, delete-orphan",
-        passive_deletes=True
-    )
+        passive_deletes="all"
+    )  # on delete restrict
+
+    __mapper_args__ = {
+        "polymorphic_identity": "auctionInfo"
+    }
 
 
 class BidInfo(Base):
     __tablename__ = "bidInfo"
 
     auction_id: Mapped[intPK] = mapped_column(
-        ForeignKey(AuctionInfo.appointment_id, ondelete="CASCADE")
+        ForeignKey(AuctionInfo.id, ondelete="RESTRICT"),
     )
     user_id: Mapped[intPK_userFK]
     amount: Mapped[coin]
@@ -297,44 +490,115 @@ class BidInfo(Base):
     user: Mapped[User] = relationship(back_populates="bids")
 
 
-class Post(Base):
-    __tablename__ = "post"
+class Transaction(Base):
+    __tablename__ = "transaction"
+
+    id: Mapped[intPK] = mapped_column(BigInteger, Identity())
+    sender_id: Mapped[userFK]
+    receiver_id: Mapped[userFK]
+    activity_id: Mapped[int | None] = mapped_column(
+        ForeignKey(Activity.id, ondelete="SET NULL")
+    )
+    amount: Mapped[coin]
+    type: Mapped[strText]
+    date_created: Mapped[timestamp] = mapped_column(server_default=func.now())
+
+    sender: Mapped[User | None] = relationship(
+        back_populates="sent_transactions",
+        foreign_keys="sender_id"
+    )
+    receiver: Mapped[User | None] = relationship(
+        back_populates="received_transactions",
+        foreign_keys="receiver_id"
+    )
+    activity: Mapped[Activity | None] = relationship()
+
+
+class Review(Base):
+    __tablename__ = "review"
+
+    id: Mapped[intPK] = mapped_column(
+        ForeignKey(Activity.id, ondelete="CASCADE")
+    )
+    score: Mapped[int] = mapped_column(
+        SMALLINT, CheckConstraint("0 <= score AND score <= 5")
+    )
+    text: Mapped[strText] = mapped_column(server_default=text("''"))
+    date_created: Mapped[timestamp] = mapped_column(server_default=func.now())
+
+    report: Mapped[list["Report"]] = relationship(
+        back_populates="review",
+        cascade="all, delete-orphan",
+        passive_deletes=True
+    )
+
+
+class Report(Base):
+    __tablename__ = "report"
 
     id: Mapped[intPK] = mapped_column(Identity())
-    user_id: Mapped[userFK | None]
-    markdown: Mapped[strText]
-    date_created: Mapped[timestamp] = mapped_column(server_default=func.now())
-
-    user: Mapped[User] = relationship(back_populates="post")
-
-
-class Comment(Base):
-    __tablename__ = "comment"
-
-    post_id: Mapped[intPK] = mapped_column(
-        ForeignKey(Post.id, ondelete="CASCADE")
+    user_id: Mapped[userFK]
+    review_id: Mapped[int] = mapped_column(
+        ForeignKey(Review.id, ondelete="CASCADE")
     )
-    id: Mapped[intPK] = mapped_column(FetchedValue())
-    user_id: Mapped[userFK | None]
-    text: Mapped[strText]
+    reason: Mapped[strText] = mapped_column(server_default=text("''"))
     date_created: Mapped[timestamp] = mapped_column(server_default=func.now())
 
-    user: Mapped[User] = relationship(back_populates="comment")
+    reporter: Mapped[User] = relationship(back_populates="reports")
+    review: Mapped[Review | None] = relationship(back_populates="report")
+
+
+class NotificationHistory(Base):
+    __tablename__ = "notificationHistory"
+
+    user_id: Mapped[intPK_userFK]
+    id: Mapped[intPK] = mapped_column(FetchedValue())
+    activity_id: Mapped[int | None] = mapped_column(
+        ForeignKey(Activity.id, ondelete="SET NULL")
+    )
+    transaction_id: Mapped[int | None] = mapped_column(
+        ForeignKey(Transaction.id, ondelete="SET NULL")
+    )
+    content: Mapped[strText]
+    type: Mapped[strText]
+    date_created: Mapped[timestamp] = mapped_column(server_default=func.now())
+
+    user: Mapped[User] = relationship(back_populates="notification")
+    activity: Mapped[Activity | None] = relationship()
+    transaction: Mapped[Transaction | None] = relationship()
 
 
 counter_tables = DDL('''\
-CREATE TABLE IF NOT EXISTS "packageCounter" (
+CREATE TABLE IF NOT EXISTS "scheduleCounter" (
+    id INTEGER PRIMARY KEY,
+    counter INTEGER DEFAULT 1 NOT NULL,
+    FOREIGN KEY (id) REFERENCES "seer" (id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS "fPackageCounter" (
+    id INTEGER PRIMARY KEY,
+    counter INTEGER DEFAULT 1 NOT NULL,
+    FOREIGN KEY (id) REFERENCES "seer" (id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS "qPackageCounter" (
+    id INTEGER PRIMARY KEY,
+    counter INTEGER DEFAULT 1 NOT NULL,
+    FOREIGN KEY (id) REFERENCES "seer" (id) ON DELETE CASCADE
+);
+                     
+CREATE TABLE IF NOT EXISTS "appointQuestionCounter" (
+    id BIGINT PRIMARY KEY,
+    counter INTEGER DEFAULT 1 NOT NULL,
+    FOREIGN KEY (id) REFERENCES "appointment" (id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS "notificationCounter" (
     id INTEGER PRIMARY KEY,
     counter INTEGER DEFAULT 1 NOT NULL,
     FOREIGN KEY (id) REFERENCES "userAccount" (id) ON DELETE CASCADE
 );
-
-CREATE TABLE IF NOT EXISTS "commentCounter" (
-    id INTEGER PRIMARY KEY,
-    counter INTEGER DEFAULT 1 NOT NULL,
-    FOREIGN KEY (id) REFERENCES "post" (id) ON DELETE CASCADE
-);
-'''   ).execute_if(dialect='postgresql')
+''').execute_if(dialect='postgresql')
 
 funcs = DDL("""\
 CREATE OR REPLACE FUNCTION increment_composite() RETURNS TRIGGER AS $$
@@ -352,11 +616,20 @@ $$ LANGUAGE plpgsql;
 """).execute_if(dialect='postgresql')
 
 triggers = DDL("""\
-CREATE OR REPLACE TRIGGER package_increment BEFORE INSERT ON "package"
-FOR EACH ROW EXECUTE PROCEDURE increment_composite('packageCounter', 'user_id');
+CREATE OR REPLACE TRIGGER pk_increment BEFORE INSERT ON "seerSchedule"
+FOR EACH ROW EXECUTE PROCEDURE increment_composite('scheduleCounter', 'seer_id');
 
-CREATE OR REPLACE TRIGGER package_increment BEFORE INSERT ON "comment"
-FOR EACH ROW EXECUTE PROCEDURE increment_composite('commentCounter', 'post_id');
+CREATE OR REPLACE TRIGGER pk_increment BEFORE INSERT ON "fortunePackage"
+FOR EACH ROW EXECUTE PROCEDURE increment_composite('fPackageCounter', 'seer_id');
+
+CREATE OR REPLACE TRIGGER pk_increment BEFORE INSERT ON "questionPackage"
+FOR EACH ROW EXECUTE PROCEDURE increment_composite('qPackageCounter', 'seer_id');
+
+CREATE OR REPLACE TRIGGER pk_increment BEFORE INSERT ON "appointmentQuestions"
+FOR EACH ROW EXECUTE PROCEDURE increment_composite('appointQuestionCounter', 'appointment_id');
+
+CREATE OR REPLACE TRIGGER pk_increment BEFORE INSERT ON "notificationHistory"
+FOR EACH ROW EXECUTE PROCEDURE increment_composite('notificationCounter', 'user_id');
 """).execute_if(dialect='postgresql')
 
 
