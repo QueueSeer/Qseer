@@ -113,7 +113,7 @@ class User(Base):
     last_name: Mapped[strText]
     role: Mapped[strText]
     email: Mapped[strText] = mapped_column(unique=True)
-    password: Mapped[strText]
+    password: Mapped[strText | None] = mapped_column(server_default=text("null"))
     birthdate: Mapped[dt.date | None]
     phone_number: Mapped[str | None] = mapped_column(CHAR(10), nullable=True)
     coins: Mapped[coin] = mapped_column(server_default=text("0"))
