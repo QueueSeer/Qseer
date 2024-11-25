@@ -3,7 +3,6 @@ services:
     build: .
     image: backend-image
     container_name: backend
-    restart: unless-stopped
     env_file: .env
     environment:
       - WEB_CONCURRENCY
