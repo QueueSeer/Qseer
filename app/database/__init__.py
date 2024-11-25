@@ -8,4 +8,4 @@
 ╰─────────────────────╯
 '''
 from .models import Base
-from .connection import get_session, create_tables
+from .connection import get_session, create_tables, SessionDep

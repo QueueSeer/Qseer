@@ -1,0 +1,74 @@
+<html>
+<head>
+    <style>
+        .basic-btn {
+            margin: 1em;
+            padding: 1em;
+            border: 2px solid #333333;
+            border-radius: 0.5em;
+            text-decoration: none;
+            color: black;
+            background-color: white;
+            transition: 0.2s;
+        }
+    
+        .basic-btn:hover {
+            background-color: #f0f0f0;
+        }
+    
+        .basic-btn:active {
+            background-color: #f0f0f0;
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body>
+    <div id="center_align" style='display: flex; flex-direction: column; align-items: center;'>
+        <h1>Documentations</h1><br>
+        <a class="basic-btn" href='./docs'>Interactive API docs</a>
+        <a class="basic-btn" href='./redoc'>Alternative API docs</a>
+        <div id="g_signin_button" style="margin: 1em;">
+            <div id="g_id_onload"
+                data-client_id="482872878938-qln7jlcv0elrffnnaqd4qpqs43jh4ob9.apps.googleusercontent.com"
+                data-context="signin"
+                data-callback="handleCredentialResponse"
+                data-cancel_on_tap_outside="false"
+                data-itp_support="true">
+            </div>
+            <div class="g_id_signin"
+                data-type="standard"
+                data-shape="rectangular"
+                data-theme="outline"
+                data-text="signin_with"
+                data-size="large"
+                data-logo_alignment="center"
+                data-width="200">
+            </div>
+        </div>
+    </div>
+    <script src="https://accounts.google.com/gsi/client" async></script>
+    <script>
+        function handleCredentialResponse(response) {
+            user_info = JSON.parse(atob(response.credential.split('.')[1]))
+            console.log(user_info);
+            jwt_output = document.createElement('div');
+            jwt_output.style.margin = '1em';
+            jwt_output.style.display = 'flex';
+            jwt_output.innerHTML = '<textarea id="output_token" wrap="soft" rows="3" readonly style="resize: none; overflow: none;">' 
+                + response.credential + '</textarea><button onclick="copyText()">Copy</button>';
+            g_signin_doc = document.createElement('a');
+            g_signin_doc.href = './docs#/User/register_api_user__post';
+            g_signin_doc.className = 'basic-btn';
+            g_signin_doc.innerHTML = 'Signed in as: ' + user_info.name;
+            document.getElementById('center_align').appendChild(jwt_output);
+            document.getElementById('center_align').appendChild(g_signin_doc);
+        }
+        function copyText() {
+            let output_token = document.getElementById("output_token");
+            output_token.select();
+            output_token.setSelectionRange(0, 99999);
+            document.execCommand("copy");
+        }
+    </script>
+</body>
+</html>

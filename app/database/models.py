@@ -45,8 +45,7 @@ strText = Annotated[str, mapped_column(Text())]
 timestamp = Annotated[
     dt.datetime,
     mapped_column(
-        TIMESTAMP(timezone=True),
-        nullable=False
+        TIMESTAMP(timezone=True)
     )
 ]
 coin = Annotated[
@@ -113,15 +112,22 @@ class User(Base):
     last_name: Mapped[strText]
     role: Mapped[strText]
     email: Mapped[strText] = mapped_column(unique=True)
-    password: Mapped[strText | None] = mapped_column(server_default=text("null"))
-    birthdate: Mapped[dt.date | None]
+    password: Mapped[strText | None] = mapped_column(
+        server_default=text("null"), deferred=True
+    )
+    birthdate: Mapped[timestamp | None] = mapped_column(server_default=text("null"))
     phone_number: Mapped[str | None] = mapped_column(CHAR(10), nullable=True)
     coins: Mapped[coin] = mapped_column(server_default=text("0"))
     image: Mapped[strText] = mapped_column(server_default=text("''"))
-    is_active: Mapped[bool] = mapped_column(server_default=text("true"))
-    date_created: Mapped[timestamp] = mapped_column(server_default=func.now())
+    is_active: Mapped[bool] = mapped_column(
+        server_default=text("false"), deferred=True
+    )
+    date_created: Mapped[timestamp] = mapped_column(
+        server_default=func.now(), deferred=True
+    )
     properties: Mapped[dict[str, Any]] = mapped_column(
-        JSONB, server_default=text("'{}'"))
+        JSONB, server_default=text("'{}'"), deferred=True
+    )
 
     # back_populates: name of the relationship attribute in the other model
     seer: Mapped["Seer | None"] = relationship(
@@ -132,7 +138,7 @@ class User(Base):
     following: Mapped[list["Seer"]] = relationship(
         secondary=FollowSeer,
         back_populates="followers",
-        cascade="all, delete-orphan",
+        cascade="all, delete",
         passive_deletes=True
     )  # on delete cascade
     appointments: Mapped[list["Appointment"]] = relationship(
@@ -150,10 +156,12 @@ class User(Base):
     )  # on delete cascade
     sent_transactions: Mapped[list["Transaction"]] = relationship(
         back_populates="sender",
+        foreign_keys="Transaction.sender_id",
         passive_deletes=True
     )  # on delete set null
     received_transactions: Mapped[list["Transaction"]] = relationship(
         back_populates="receiver",
+        foreign_keys="Transaction.receiver_id",
         passive_deletes=True
     )  # on delete set null
     reports: Mapped[list["Report"]] = relationship(
@@ -167,7 +175,7 @@ class User(Base):
     )  # on delete cascade
 
     def __repr__(self) -> str:
-        return f"User(id={self.id!r})"
+        return f"User(id={self.id!r}, username={self.username!r})"
 
 
 class Seer(Base):
@@ -185,7 +193,7 @@ class Seer(Base):
         server_default=text("null")
     )
     properties: Mapped[dict[str, Any]] = mapped_column(
-        JSONB, server_default=text("'{}'")
+        JSONB, server_default=text("'{}'"), deferred=True
     )
 
     user: Mapped[User] = relationship(
@@ -195,7 +203,7 @@ class Seer(Base):
     followers: Mapped[list[User]] = relationship(
         secondary=FollowSeer,
         back_populates="following",
-        cascade="all, delete-orphan",
+        cascade="all, delete",
         passive_deletes=True
     )
     schedule: Mapped[list["Schedule"]] = relationship(
@@ -298,10 +306,6 @@ class FortunePackage(Base):
     date_created: Mapped[timestamp] = mapped_column(server_default=func.now())
 
     seer: Mapped[Seer] = relationship(back_populates="fortune_packages")
-    appointments: Mapped[list["Appointment"]] = relationship(
-        back_populates="package",
-        passive_deletes="all"
-    )
 
 
 class QuestionPackage(Base):
@@ -319,10 +323,6 @@ class QuestionPackage(Base):
     date_created: Mapped[timestamp] = mapped_column(server_default=func.now())
 
     seer: Mapped[Seer] = relationship(back_populates="question_packages")
-    question_answers: Mapped[list["QuestionAnswer"]] = relationship(
-        back_populates="package",
-        passive_deletes="all"
-    )
 
 
 class Activity(Base):
@@ -355,7 +355,6 @@ class Appointment(Activity):
     )
 
     questions: Mapped[list["AppointmentQuestions"]] = relationship(
-        cascade="all, delete-orphan",
         passive_deletes="all"
     )
     client: Mapped[User | None] = relationship(
@@ -365,8 +364,8 @@ class Appointment(Activity):
         back_populates="appointments"
     )
     package: Mapped[FortunePackage | None] = relationship(
-        back_populates="appointments",
-        foreign_keys="[seer_id, f_package_id]"
+        primaryjoin="and_(foreign(Appointment.f_package_id) == FortunePackage.id, "
+        "Appointment.seer_id == FortunePackage.seer_id)",
     )
 
     __mapper_args__ = {
@@ -375,8 +374,8 @@ class Appointment(Activity):
 
     __table_args__ = (
         ForeignKeyConstraint(
-            ["seer_id", "f_package_id"], [
-                FortunePackage.seer_id, FortunePackage.id],
+            ["seer_id", "f_package_id"],
+            [FortunePackage.seer_id, FortunePackage.id],
             ondelete="SET NULL (f_package_id)",
         ),
         CheckConstraint(
@@ -419,8 +418,8 @@ class QuestionAnswer(Activity):
         back_populates="question_answers"
     )
     package: Mapped[QuestionPackage | None] = relationship(
-        back_populates="question_answers",
-        foreign_keys="[seer_id, q_package_id]"
+        primaryjoin="and_(foreign(QuestionAnswer.q_package_id) == QuestionPackage.id, "
+        "QuestionAnswer.seer_id == QuestionPackage.seer_id)"
     )
 
     __mapper_args__ = {
@@ -429,8 +428,8 @@ class QuestionAnswer(Activity):
 
     __table_args__ = (
         ForeignKeyConstraint(
-            ["seer_id", "q_package_id"], [
-                FortunePackage.seer_id, FortunePackage.id],
+            ["seer_id", "q_package_id"],
+            [QuestionPackage.seer_id, QuestionPackage.id],
             ondelete="SET NULL (q_package_id)",
         ),
         CheckConstraint(
@@ -505,11 +504,11 @@ class Transaction(Base):
 
     sender: Mapped[User | None] = relationship(
         back_populates="sent_transactions",
-        foreign_keys="sender_id"
+        foreign_keys="Transaction.sender_id"
     )
     receiver: Mapped[User | None] = relationship(
         back_populates="received_transactions",
-        foreign_keys="receiver_id"
+        foreign_keys="Transaction.receiver_id"
     )
     activity: Mapped[Activity | None] = relationship()
 

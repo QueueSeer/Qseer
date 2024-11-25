@@ -1,9 +1,10 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, status
+from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.core.error import exc_handlers
 from app.components import get_api_router
 from app import (
     database,
@@ -19,7 +20,7 @@ async def lifespan(app: FastAPI):
     # shutdown
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(lifespan=lifespan, exception_handlers=exc_handlers)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=['*'],
@@ -30,33 +31,16 @@ app.add_middleware(
 app.include_router(get_api_router())
 
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/", response_class=FileResponse)
 async def root():
-    return '''\
-<style>
-    a {
-        margin: 1em;
-        padding: 1em;
-        border: 2px solid #333333;
-        border-radius: 0.5em;
-        text-decoration: none;
-        color: black;
-        background-color: white;
-        transition: 0.2s;
-    }
+    return FileResponse('./app/index.html')
 
-    a:hover {
-        background-color: #f0f0f0;
-    }
 
-    a:active {
-        background-color: #f0f0f0;
-        transform: scale(0.98);
-    }
-</style>
-<div style='display: flex; flex-direction: column; align-items: center;'>
-    <h1>Documentations</h1><br>
-    <a href='./docs'>Interactive API docs</a>
-    <a href='./redoc'>Alternative API docs</a>
-</div>
-'''
+@app.get(
+    "/brew/coffee",
+    status_code=status.HTTP_418_IM_A_TEAPOT,
+    response_class=PlainTextResponse,
+    response_description="I'm a teapot."
+)
+async def brew_coffee():
+    return "I refuses to brew coffee because I am, permanently, a teapot."

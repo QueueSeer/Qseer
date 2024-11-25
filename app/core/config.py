@@ -14,6 +14,10 @@ class Settings(BaseSettings):
     PG_PORT: int = 5432
     PG_DATABASE: str = "test"
 
+    TRIGGER_URL: str
+
+    GOOGLE_CLIENT_ID: str
+
     secret_dp_S3_ACCOUNT_ID: str
     secret_dp_S3_ACCESS_KEY: str
     secret_dp_S3_SECRET: str
