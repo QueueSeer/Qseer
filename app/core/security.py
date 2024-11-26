@@ -69,7 +69,7 @@ def create_jwt(data: dict, expires_delta: timedelta | None = None):
     return encoded_jwt
 
 
-def decode_jwt(token: str, require=("exp", "sub", "email")) -> dict[str, Any]:
+def decode_jwt(token: str, require=("exp", "sub", "email", "role")) -> dict[str, Any]:
     try:
         return jwt.decode(
             token,

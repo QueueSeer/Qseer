@@ -9,7 +9,7 @@ class UserBase:
         id: int = Field(examples=[1])
 
     class Username(BaseModel):
-        username: str = Field(examples=["sanfong"])
+        username: str = Field(min_length=1, examples=["sanfong"])
 
     class DisplayName(BaseModel):
         display_name: str = Field(min_length=3, examples=["Sanfong"])
@@ -79,6 +79,11 @@ class UserRegister(BaseModel):
     )
 
 
+class UserLogin(BaseModel):
+    username: str = Field(examples=["sanfong"])
+    password: str = Field(examples=["12345678"])
+
+
 class UserOut(
     UserBase.Image,
     UserBase.Coins,
@@ -90,4 +95,8 @@ class UserOut(
     UserBase.Username,
     UserBase.Id,
 ):
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UserProperty(UserBase.Properties, UserBase.DateCreated):
     model_config = ConfigDict(from_attributes=True)

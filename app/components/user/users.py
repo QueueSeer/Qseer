@@ -6,21 +6,28 @@ from fastapi import (
     APIRouter,
     HTTPException,
     Request,
+    Response,
     status,
     Depends,
     Form,
     Cookie
 )
 from fastapi.responses import PlainTextResponse
+from pydantic import validate_email
 from sqlalchemy import delete, select, update
 
 from app.core.config import settings
-from app.core.security import create_jwt, decode_jwt
+from app.core.security import create_jwt, decode_jwt, verify_password
 from app.core.schemas import MessageModel
 from app.database import SessionDep
 from app.database.models import User
 from . import responses as res
-from .schemas import UserBase, UserRegister, UserOut
+from .schemas import (
+    UserBase,
+    UserRegister,
+    UserLogin,
+    UserOut
+)
 from .service import create_user
 
 router = APIRouter(prefix="/user", tags=["User"])
@@ -41,8 +48,39 @@ async def google_signin(credential: Annotated[str, Form()]):
     return response
 
 
+@router.post("/login", responses=res.login)
+async def login(user: UserLogin, session: SessionDep, response: Response):
+    '''
+    - **username**: required เป็น username หรือ email
+    - **password**: required
+    '''
+    try:
+        validate_email(user.username)
+        is_email = True
+    except ValueError:
+        is_email = False
+    stmt = select(User.id, User.email, User.password, User.role)
+    cond = User.email == user.username if is_email else User.username == user.username
+    stmt = stmt.where(cond, User.is_active == True)
+    row = session.execute(stmt).one_or_none()
+    session.commit()
+    hashed_password = row.password if row is not None else None
+    if not verify_password(user.password, hashed_password):
+        raise HTTPException(status_code=404, detail="User not found.")
+    token = create_jwt(
+        {"sub": row.id, "email": row.email, "role": row.role},
+        timedelta(days=7)
+    )
+    cookie_path = "/" if settings.DEVELOPMENT else "/api"
+    response.set_cookie(
+        "token", token, max_age=604800, path=cookie_path,
+        secure=True, httponly=True
+    )
+    return UserBase.Id(id=row.id)
+
+
 @router.post(
-    "/",
+    "/register",
     status_code=status.HTTP_201_CREATED,
     responses=res.register
 )
@@ -90,9 +128,9 @@ async def verify_user(token: str, session: SessionDep):
         values(is_active=True).
         returning(User.id)
     )
-    id = session.execute(stmt).scalar_one_or_none()
+    user_id = session.execute(stmt).scalar_one_or_none()
     session.commit()
-    if id is None:
+    if user_id is None:
         raise HTTPException(status_code=400, detail="User has been verified.")
     return MessageModel("User verified.")
 
@@ -109,3 +147,14 @@ async def delete_user(id: int = None, session: SessionDep = None):
     result = session.execute(stmt)
     session.commit()
     return {"statement": str(stmt), "result": result.scalars().all()}
+
+
+@router.get("/check_cookie")
+async def check_cookie(token: str = Cookie(None)):
+    '''
+    For testing purpose only.
+    '''
+    if token is None:
+        raise HTTPException(status_code=401, detail="Token not found.")
+    payload = decode_jwt(token)
+    return payload

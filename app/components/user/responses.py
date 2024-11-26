@@ -1,6 +1,21 @@
 from .schemas import *
 
 
+login = {
+    200: {
+        "model": UserBase.Id,
+        "description": "User logged in."
+    },
+    404: {
+        "content": {
+            "application/json": {
+                "example": {"detail": "User not found."}
+            }
+        },
+        "description": "Login failed."
+    }
+}
+
 register = {
     201: {
         "model": UserBase.Id,
