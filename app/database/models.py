@@ -110,7 +110,7 @@ class User(Base):
     display_name: Mapped[strText]
     first_name: Mapped[strText]
     last_name: Mapped[strText]
-    role: Mapped[strText]
+    role: Mapped[strText] = mapped_column(deferred=True)
     email: Mapped[strText] = mapped_column(unique=True)
     password: Mapped[strText | None] = mapped_column(
         server_default=text("null"), deferred=True

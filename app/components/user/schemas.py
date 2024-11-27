@@ -1,6 +1,7 @@
 import datetime as dt
 from decimal import Decimal
-from typing import Any
+from enum import Enum
+from typing import Any, Literal
 from pydantic import BaseModel, Field, EmailStr, ConfigDict
 
 
@@ -36,7 +37,7 @@ class UserBase:
 
     class Coins(BaseModel):
         coins: Decimal = (
-            Field(ge=0, max_digits=15, decimal_places=2, examples=[0])
+            Field(ge=0, max_digits=15, decimal_places=2)
         )
 
     class Image(BaseModel):
@@ -98,5 +99,17 @@ class UserOut(
     model_config = ConfigDict(from_attributes=True)
 
 
-class UserProperty(UserBase.Properties, UserBase.DateCreated):
-    model_config = ConfigDict(from_attributes=True)
+class UserSelectableField(str, Enum):
+    id = "id"
+    username = "username"
+    display_name = "display_name"
+    first_name = "first_name"
+    last_name = "last_name"
+    email = "email"
+    birthdate = "birthdate"
+    phone_number = "phone_number"
+    coins = "coins"
+    image = "image"
+    is_active = "is_active"
+    date_created = "date_created"
+    properties = "properties"

@@ -17,7 +17,12 @@ from pydantic import validate_email
 from sqlalchemy import delete, select, update
 
 from app.core.config import settings
-from app.core.security import create_jwt, decode_jwt, verify_password
+from app.core.security import (
+    create_jwt,
+    decode_jwt,
+    verify_password,
+    JWTCookieDep
+)
 from app.core.schemas import MessageModel
 from app.database import SessionDep
 from app.database.models import User
@@ -26,7 +31,8 @@ from .schemas import (
     UserBase,
     UserRegister,
     UserLogin,
-    UserOut
+    UserOut,
+    UserSelectableField
 )
 from .service import create_user
 
@@ -74,7 +80,7 @@ async def login(user: UserLogin, session: SessionDep, response: Response):
     cookie_path = "/" if settings.DEVELOPMENT else "/api"
     response.set_cookie(
         "token", token, max_age=604800, path=cookie_path,
-        secure=True, httponly=True
+        secure=True, httponly=True, samesite="strict"
     )
     return UserBase.Id(id=row.id)
 
@@ -107,10 +113,7 @@ async def register(user: UserRegister, session: SessionDep, request: Request):
     return UserBase.Id(id=new_user.id)
 
 
-@router.get(
-    "/verify/{token}",
-    responses=res.verify_user
-)
+@router.get("/verify/{token}", responses=res.verify_user)
 async def verify_user(token: str, session: SessionDep):
     '''
     ยืนยันตัวตนผู้ใช้งานโดยใช้ token ที่ส่งมาจากอีเมล์
@@ -135,6 +138,40 @@ async def verify_user(token: str, session: SessionDep):
     return MessageModel("User verified.")
 
 
+@router.get("/me", responses=res.get_self_info)
+async def get_self_info(payload: JWTCookieDep, session: SessionDep):
+    '''
+    ดึงข้อมูลของผู้ใช้งานของตัวเอง แต่ไม่รวม date_created และ properties
+    '''
+    user_id = payload["sub"]
+    user = session.execute(
+        select(User).
+        where(User.id == user_id, User.is_active == True)
+    ).scalar_one_or_none()
+    return UserOut.model_validate(user)
+
+
+@router.get("/me/{field}", responses=res.get_self_field)
+async def get_self_field(
+    field: UserSelectableField,
+    payload: JWTCookieDep,
+    session: SessionDep
+):
+    '''
+    ดึงข้อมูลของผู้ใช้งานของตัวเอง เฉพาะ field ที่ต้องการ
+    '''
+    user_id = payload["sub"]
+    stmt = (
+        select(User.__dict__[field]).
+        where(User.id == user_id, User.is_active == True)
+    )
+    result = session.execute(stmt).scalar_one_or_none()
+    session.commit()
+    if result is None:
+        raise HTTPException(status_code=404, detail="User not found.")
+    return {field: result}
+
+
 @router.post("/delete")
 async def delete_user(id: int = None, session: SessionDep = None):
     '''
@@ -150,11 +187,10 @@ async def delete_user(id: int = None, session: SessionDep = None):
 
 
 @router.get("/check_cookie")
-async def check_cookie(token: str = Cookie(None)):
+async def check_cookie(payload: JWTCookieDep):
     '''
     For testing purpose only.
     '''
-    if token is None:
-        raise HTTPException(status_code=401, detail="Token not found.")
-    payload = decode_jwt(token)
+    if payload is None:
+        raise HTTPException(status_code=404, detail="Token not found.")
     return payload

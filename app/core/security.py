@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta, timezone
-from typing import Any, Optional
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from fastapi import Request, HTTPException
+from typing import Annotated, Any, Optional
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer, APIKeyCookie
+from fastapi import Depends, Request, HTTPException
+from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_403_FORBIDDEN
 import jwt
 from jwt.exceptions import (
     InvalidTokenError,
@@ -18,7 +19,7 @@ ALGORITHM = "HS256"
 
 class JWTBearer(HTTPBearer):
     def __init__(self, **kwargs):
-        super(JWTBearer, self).__init__(*kwargs)
+        super(JWTBearer, self).__init__(**kwargs)
 
     async def __call__(self, request: Request) -> Optional[str]:
         credentials: Optional[HTTPAuthorizationCredentials] = await super(JWTBearer, self).__call__(request)
@@ -37,6 +38,28 @@ class JWTBearer(HTTPBearer):
             raise HTTPException(status_code=403, detail="Invalid token.")
         return payload
 
+
+class JWTCookie(APIKeyCookie):
+    def __init__(self, name: str, require: tuple = (), **kwargs):
+        super().__init__(name=name, **kwargs)
+        self.require = require
+
+    async def __call__(self, request: Request) -> dict[str, Any] | None:
+        api_key = request.cookies.get(self.model.name)
+        if not api_key:
+            if self.auto_error:
+                raise HTTPException(
+                    status_code=HTTP_401_UNAUTHORIZED, detail="Shoo! Go away!"
+                )
+            else:
+                return None
+        return decode_jwt(api_key, self.require)
+
+
+cookie_scheme = JWTCookie(
+    name="token", require=("exp", "sub", "email", "role")
+)
+JWTCookieDep = Annotated[dict[str, Any], Depends(cookie_scheme)]
 
 # Bug fixed: passlib warning when trying to get bcrypt version
 disable_warning_obj = (lambda: None)
@@ -69,7 +92,7 @@ def create_jwt(data: dict, expires_delta: timedelta | None = None):
     return encoded_jwt
 
 
-def decode_jwt(token: str, require=("exp", "sub", "email", "role")) -> dict[str, Any]:
+def decode_jwt(token: str, require: tuple = ()) -> dict[str, Any]:
     try:
         return jwt.decode(
             token,
@@ -78,8 +101,14 @@ def decode_jwt(token: str, require=("exp", "sub", "email", "role")) -> dict[str,
             options={"require": require}
         )
     except ExpiredSignatureError:
-        raise HTTPException(status_code=403, detail="Expired token.")
+        raise HTTPException(
+            status_code=HTTP_403_FORBIDDEN, detail="Expired token."
+        )
     except MissingRequiredClaimError as e:
-        raise HTTPException(status_code=403, detail=str(e))
+        raise HTTPException(
+            status_code=HTTP_403_FORBIDDEN, detail=str(e)
+        )
     except InvalidTokenError:
-        raise HTTPException(status_code=403, detail="Invalid token.")
+        raise HTTPException(
+            status_code=HTTP_403_FORBIDDEN, detail="Invalid token."
+        )
