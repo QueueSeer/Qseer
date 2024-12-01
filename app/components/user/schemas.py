@@ -1,7 +1,7 @@
 import datetime as dt
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Literal
+from typing import Any
 from pydantic import BaseModel, Field, EmailStr, ConfigDict
 
 
@@ -24,6 +24,9 @@ class UserBase:
 
     class Email(BaseModel):
         email: EmailStr = Field(examples=["64010972@kmitl.ac.th"])
+
+    class Password(BaseModel):
+        password: str = Field(min_length=8, examples=["12345678"])
 
     class Birthdate(BaseModel):
         birthdate: dt.datetime | None = (
@@ -113,3 +116,17 @@ class UserSelectableField(str, Enum):
     is_active = "is_active"
     date_created = "date_created"
     properties = "properties"
+
+
+class UserUpdate(BaseModel):
+    display_name: str | None = Field(None, min_length=3, examples=["Sanfong"])
+    first_name: str | None = Field(None, min_length=1, examples=["Apinyawat"])
+    last_name: str | None = Field(None, min_length=1, examples=["Khwanpruk"])
+    phone_number: str | None = (
+        Field(None, min_length=10, max_length=10, examples=["0812345678"])
+    )
+    birthdate: dt.datetime | None = (
+        Field(None, examples=["2002-10-03T19:00:00+07:00"])
+    )
+    image: str | None = Field(None, examples=["https://example.com/image.jpg"])
+    properties: dict[str, Any] | None = Field(None)

@@ -48,6 +48,18 @@ login = {
     }
 }
 
+logout = {
+    HTTP_200_OK: {
+        "content": {
+            "application/json": {
+                "example": {"message": "Logged out."}
+            }
+        },
+        "description": "User logged out."
+    },
+    **possible_JWTCookie_response
+}
+
 register = {
     HTTP_201_CREATED: {
         "model": UserBase.Id,
@@ -101,6 +113,14 @@ get_self_field = {
             }
         },
         "description": "User field."
+    },
+    **possible_JWTCookie_response
+}
+
+update_self_info = {
+    HTTP_200_OK: {
+        "model": UserUpdate,
+        "description": "User information updated."
     },
     **possible_JWTCookie_response
 }

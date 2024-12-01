@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 
-class MessageModel(BaseModel):
+class Message(BaseModel):
     '''
     For returning only message.
     '''

@@ -23,7 +23,7 @@ from app.core.security import (
     verify_password,
     JWTCookieDep
 )
-from app.core.schemas import MessageModel
+from app.core.schemas import Message
 from app.database import SessionDep
 from app.database.models import User
 from . import responses as res
@@ -32,7 +32,8 @@ from .schemas import (
     UserRegister,
     UserLogin,
     UserOut,
-    UserSelectableField
+    UserSelectableField,
+    UserUpdate,
 )
 from .service import create_user
 
@@ -85,6 +86,12 @@ async def login(user: UserLogin, session: SessionDep, response: Response):
     return UserBase.Id(id=row.id)
 
 
+@router.delete("/logout", responses=res.logout)
+async def logout(response: Response):
+    response.delete_cookie("token")
+    return Message("Logged out.")
+
+
 @router.post(
     "/register",
     status_code=status.HTTP_201_CREATED,
@@ -135,7 +142,7 @@ async def verify_user(token: str, session: SessionDep):
     session.commit()
     if user_id is None:
         raise HTTPException(status_code=400, detail="User has been verified.")
-    return MessageModel("User verified.")
+    return Message("User verified.")
 
 
 @router.get("/me", responses=res.get_self_info)
@@ -149,6 +156,31 @@ async def get_self_info(payload: JWTCookieDep, session: SessionDep):
         where(User.id == user_id, User.is_active == True)
     ).scalar_one_or_none()
     return UserOut.model_validate(user)
+
+
+@router.patch("/me", responses=res.update_self_info)
+async def update_self_info(user: UserUpdate, payload: JWTCookieDep, session: SessionDep):
+    '''
+    แก้ไขข้อมูลของผู้ใช้งานของตัวเอง
+
+    ส่งข้อมูลที่ต้องการแก้ไขเท่านั้น ข้อมูลที่ไม่ได้ส่งมาจะไม่ถูกเปลี่ยนแปลง
+
+    response จะมีข้อมูลที่ถูกเปลี่ยนแปลงเท่านั้น
+    '''
+    user_id = payload["sub"]
+    user_values = user.model_dump(exclude_unset=True)
+    user_cols = (getattr(User, key) for key in user_values)
+    stmt = (
+        update(User).
+        where(User.id == user_id, User.is_active == True).
+        values(**user_values).
+        returning(*user_cols)
+    )
+    result = session.execute(stmt).one_or_none()
+    session.commit()
+    if result is None:
+        raise HTTPException(status_code=404, detail="User not found.")
+    return result._asdict()
 
 
 @router.get("/me/{field}", responses=res.get_self_field)
