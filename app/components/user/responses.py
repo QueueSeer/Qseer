@@ -1,64 +1,5 @@
-from starlette.status import (
-    HTTP_200_OK,
-    HTTP_201_CREATED,
-    HTTP_400_BAD_REQUEST,
-    HTTP_401_UNAUTHORIZED,
-    HTTP_403_FORBIDDEN,
-    HTTP_404_NOT_FOUND,
-    HTTP_409_CONFLICT
-)
+from ..responses import *
 from .schemas import *
-
-
-invalid_token_example = {
-    "content": {
-        "application/json": {
-            "example": {"detail": "Invalid token."}
-        }
-    },
-    "description": "Invalid token."
-}
-
-no_cookie_example = {
-    "content": {
-        "application/json": {
-            "example": {"detail": "Shoo! Go away!"}
-        }
-    },
-    "description": "No cookie, no access."
-}
-
-possible_JWTCookie_response = {
-    HTTP_401_UNAUTHORIZED: no_cookie_example,
-    HTTP_403_FORBIDDEN: invalid_token_example
-}
-
-login = {
-    HTTP_200_OK: {
-        "model": UserBase.Id,
-        "description": "User logged in."
-    },
-    HTTP_404_NOT_FOUND: {
-        "content": {
-            "application/json": {
-                "example": {"detail": "User not found."}
-            }
-        },
-        "description": "Login failed."
-    }
-}
-
-logout = {
-    HTTP_200_OK: {
-        "content": {
-            "application/json": {
-                "example": {"message": "Logged out."}
-            }
-        },
-        "description": "User logged out."
-    },
-    **possible_JWTCookie_response
-}
 
 register = {
     HTTP_201_CREATED: {
@@ -94,7 +35,7 @@ verify_user = {
         },
         "description": "User has been verified or does not exist."
     },
-    HTTP_403_FORBIDDEN: invalid_token_example
+    HTTP_403_FORBIDDEN: INVALID_TOKEN_EXAMPLE
 }
 
 get_self_info = {
@@ -102,7 +43,7 @@ get_self_info = {
         "model": UserOut,
         "description": "User information."
     },
-    **possible_JWTCookie_response
+    **POSSIBLE_JWTCOOKIE_RESPONSE
 }
 
 get_self_field = {
@@ -114,7 +55,7 @@ get_self_field = {
         },
         "description": "User field."
     },
-    **possible_JWTCookie_response
+    **POSSIBLE_JWTCOOKIE_RESPONSE
 }
 
 update_self_info = {
@@ -122,5 +63,5 @@ update_self_info = {
         "model": UserUpdate,
         "description": "User information updated."
     },
-    **possible_JWTCookie_response
+    **POSSIBLE_JWTCOOKIE_RESPONSE
 }

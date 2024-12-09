@@ -1,27 +1,20 @@
 from datetime import timedelta
 from typing import Annotated
-from google.oauth2 import id_token
-from google.auth.transport import requests
 from fastapi import (
     APIRouter,
     HTTPException,
     Request,
     Response,
     status,
-    Depends,
-    Form,
-    Cookie
 )
-from fastapi.responses import PlainTextResponse
-from pydantic import validate_email
 from sqlalchemy import delete, select, update
 
 from app.core.config import settings
+from app.core.deps import UserJWTDep
 from app.core.security import (
     create_jwt,
     decode_jwt,
-    verify_password,
-    JWTCookieDep
+    hash_password,
 )
 from app.core.schemas import Message
 from app.database import SessionDep
@@ -30,7 +23,6 @@ from . import responses as res
 from .schemas import (
     UserBase,
     UserRegister,
-    UserLogin,
     UserOut,
     UserSelectableField,
     UserUpdate,
@@ -38,58 +30,6 @@ from .schemas import (
 from .service import create_user
 
 router = APIRouter(prefix="/user", tags=["User"])
-
-
-@router.post("/google/signin")
-async def google_signin(credential: Annotated[str, Form()]):
-    try:
-        idinfo = id_token.verify_oauth2_token(
-            credential,
-            requests.Request(),
-            settings.GOOGLE_CLIENT_ID
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-    response = PlainTextResponse(content=idinfo['name'])
-    return response
-
-
-@router.post("/login", responses=res.login)
-async def login(user: UserLogin, session: SessionDep, response: Response):
-    '''
-    - **username**: required เป็น username หรือ email
-    - **password**: required
-    '''
-    try:
-        validate_email(user.username)
-        is_email = True
-    except ValueError:
-        is_email = False
-    stmt = select(User.id, User.email, User.password, User.role)
-    cond = User.email == user.username if is_email else User.username == user.username
-    stmt = stmt.where(cond, User.is_active == True)
-    row = session.execute(stmt).one_or_none()
-    session.commit()
-    hashed_password = row.password if row is not None else None
-    if not verify_password(user.password, hashed_password):
-        raise HTTPException(status_code=404, detail="User not found.")
-    token = create_jwt(
-        {"sub": row.id, "email": row.email, "role": row.role},
-        timedelta(days=7)
-    )
-    cookie_path = "/" if settings.DEVELOPMENT else "/api"
-    response.set_cookie(
-        "token", token, max_age=604800, path=cookie_path,
-        secure=True, httponly=True, samesite="strict"
-    )
-    return UserBase.Id(id=row.id)
-
-
-@router.delete("/logout", responses=res.logout)
-async def logout(response: Response):
-    response.delete_cookie("token")
-    return Message("Logged out.")
 
 
 @router.post(
@@ -101,7 +41,6 @@ async def register(user: UserRegister, session: SessionDep, request: Request):
     """
     สมัครบัญชีผู้ใช้งานฝั่งลูกค้า:
 
-    - **username**: required
     - **display_name**: required
     - **first_name**: required
     - **last_name**: required
@@ -113,7 +52,7 @@ async def register(user: UserRegister, session: SessionDep, request: Request):
     - **properties**: ไม่บังคับ ระบุคุณสมบัติเพิ่มเติม
      อย่างเช่น **reading_type** (ชนิดการดูดวง) และ **interested_topics** (เรื่องที่สนใจ)
     """
-    new_user = create_user(session, user)
+    new_user = create_user(session, User(**user.model_dump()))
     token = create_jwt({"vrf": new_user.id}, timedelta(days=1))
     # TODO: send email to user
     print(request.url_for("verify_user", token=token)._url)
@@ -146,20 +85,20 @@ async def verify_user(token: str, session: SessionDep):
 
 
 @router.get("/me", responses=res.get_self_info)
-async def get_self_info(payload: JWTCookieDep, session: SessionDep):
+async def get_self_info(payload: UserJWTDep, session: SessionDep):
     '''
     ดึงข้อมูลของผู้ใช้งานของตัวเอง แต่ไม่รวม date_created และ properties
     '''
-    user_id = payload["sub"]
+    user_id = payload.sub
     user = session.execute(
         select(User).
         where(User.id == user_id, User.is_active == True)
     ).scalar_one_or_none()
     return UserOut.model_validate(user)
 
-
+ 
 @router.patch("/me", responses=res.update_self_info)
-async def update_self_info(user: UserUpdate, payload: JWTCookieDep, session: SessionDep):
+async def update_self_info(user: UserUpdate, payload: UserJWTDep, session: SessionDep):
     '''
     แก้ไขข้อมูลของผู้ใช้งานของตัวเอง
 
@@ -167,7 +106,7 @@ async def update_self_info(user: UserUpdate, payload: JWTCookieDep, session: Ses
 
     response จะมีข้อมูลที่ถูกเปลี่ยนแปลงเท่านั้น
     '''
-    user_id = payload["sub"]
+    user_id = payload.sub
     user_values = user.model_dump(exclude_unset=True)
     user_cols = (getattr(User, key) for key in user_values)
     stmt = (
@@ -186,13 +125,13 @@ async def update_self_info(user: UserUpdate, payload: JWTCookieDep, session: Ses
 @router.get("/me/{field}", responses=res.get_self_field)
 async def get_self_field(
     field: UserSelectableField,
-    payload: JWTCookieDep,
+    payload: UserJWTDep,
     session: SessionDep
 ):
     '''
     ดึงข้อมูลของผู้ใช้งานของตัวเอง เฉพาะ field ที่ต้องการ
     '''
-    user_id = payload["sub"]
+    user_id = payload.sub
     stmt = (
         select(User.__dict__[field]).
         where(User.id == user_id, User.is_active == True)
@@ -202,6 +141,14 @@ async def get_self_field(
     if result is None:
         raise HTTPException(status_code=404, detail="User not found.")
     return {field: result}
+
+
+# ติดตามหมอดู
+# POST /follow/{seer_id}
+
+
+# เลิกติดตามหมอดู
+# DELETE /follow/{seer_id}
 
 
 @router.post("/delete")
@@ -216,13 +163,3 @@ async def delete_user(id: int = None, session: SessionDep = None):
     result = session.execute(stmt)
     session.commit()
     return {"statement": str(stmt), "result": result.scalars().all()}
-
-
-@router.get("/check_cookie")
-async def check_cookie(payload: JWTCookieDep):
-    '''
-    For testing purpose only.
-    '''
-    if payload is None:
-        raise HTTPException(status_code=404, detail="Token not found.")
-    return payload

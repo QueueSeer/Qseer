@@ -2,15 +2,20 @@ import datetime as dt
 from decimal import Decimal
 from enum import Enum
 from typing import Any
-from pydantic import BaseModel, Field, EmailStr, ConfigDict
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    field_validator,
+)
+
+from app.core.security import hash_password
 
 
 class UserBase:
     class Id(BaseModel):
         id: int = Field(examples=[1])
-
-    class Username(BaseModel):
-        username: str = Field(min_length=1, examples=["sanfong"])
 
     class DisplayName(BaseModel):
         display_name: str = Field(min_length=3, examples=["Sanfong"])
@@ -39,9 +44,7 @@ class UserBase:
         )
 
     class Coins(BaseModel):
-        coins: Decimal = (
-            Field(ge=0, max_digits=15, decimal_places=2)
-        )
+        coins: float
 
     class Image(BaseModel):
         image: str = Field(examples=["https://example.com/image.jpg"])
@@ -58,7 +61,6 @@ class UserBase:
 
 
 class UserRegister(BaseModel):
-    username: str = Field(min_length=3, examples=["sanfong"])
     display_name: str = Field(min_length=3, examples=["Sanfong"])
     first_name: str = Field(min_length=1, examples=["Apinyawat"])
     last_name: str = Field(min_length=1, examples=["Khwanpruk"])
@@ -82,10 +84,10 @@ class UserRegister(BaseModel):
         )
     )
 
-
-class UserLogin(BaseModel):
-    username: str = Field(examples=["sanfong"])
-    password: str = Field(examples=["12345678"])
+    @field_validator("password")
+    @classmethod
+    def hashing_password(cls, v: str) -> str:
+        return hash_password(v)
 
 
 class UserOut(
@@ -96,7 +98,6 @@ class UserOut(
     UserBase.Email,
     UserBase.FullName,
     UserBase.DisplayName,
-    UserBase.Username,
     UserBase.Id,
 ):
     model_config = ConfigDict(from_attributes=True)
@@ -104,7 +105,6 @@ class UserOut(
 
 class UserSelectableField(str, Enum):
     id = "id"
-    username = "username"
     display_name = "display_name"
     first_name = "first_name"
     last_name = "last_name"

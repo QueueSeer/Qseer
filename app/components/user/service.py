@@ -1,22 +1,17 @@
-from fastapi import HTTPException, status
 from psycopg.errors import UniqueViolation, UndefinedTable
 from sqlalchemy.exc import IntegrityError, ProgrammingError, OperationalError
 from sqlalchemy.orm import Session
 
-from app.core.security import hash_password
 from app.core.error import IntegrityException, InternalException
 from app.database.models import User
 from app.database.utils import parse_unique_violation
-from .schemas import UserRegister
 
 
-def create_user(session: Session, user: UserRegister) -> User:
-    user.password = hash_password(user.password)
+def create_user(session: Session, new_user: User) -> User:
     try:
-        new_user = User(**user.model_dump(), role="user")
         session.add(new_user)
         session.commit()
-        session.refresh(new_user)
+        session.refresh(new_user, ["id"])
     except IntegrityError as e:
         detail = {"type": "IntegrityError", "detail": "Unknown error."}
         if isinstance(e.orig, UniqueViolation):

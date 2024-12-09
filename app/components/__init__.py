@@ -18,7 +18,7 @@ def get_api_router(*, prefix="/api", **kwargs):
     ------
     Do not name new package with existing name.
     '''
-    api_router = APIRouter(prefix=prefix, *kwargs)
+    api_router = APIRouter(prefix=prefix, **kwargs)
     for _, module_name, _ in pkgutil.walk_packages(__path__):
         module = importlib.import_module(f".{module_name}", __package__)
         try:

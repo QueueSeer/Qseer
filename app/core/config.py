@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     PG_DATABASE: str = "test"
 
     TRIGGER_URL: str
+    TRIGGER_SECRET: str
 
     GOOGLE_CLIENT_ID: str
 
