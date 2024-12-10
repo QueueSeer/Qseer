@@ -1,9 +1,10 @@
+from app.core.schemas import UserId
 from ..responses import *
 from .schemas import *
 
 register = {
     HTTP_201_CREATED: {
-        "model": UserBase.Id,
+        "model": UserId,
         "description": "User created."
     },
     HTTP_409_CONFLICT: {

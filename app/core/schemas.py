@@ -1,5 +1,5 @@
 from typing import Any
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Message(BaseModel):
@@ -16,3 +16,7 @@ class TokenPayload(BaseModel):
     exp: Any
     sub: int
     roles: list[str]
+
+
+class UserId(BaseModel):
+    id: int = Field(examples=[1])

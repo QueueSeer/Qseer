@@ -1,27 +1,22 @@
 from datetime import timedelta
-from typing import Annotated
 from fastapi import (
     APIRouter,
     HTTPException,
     Request,
-    Response,
     status,
 )
 from sqlalchemy import delete, select, update
 
-from app.core.config import settings
 from app.core.deps import UserJWTDep
 from app.core.security import (
     create_jwt,
     decode_jwt,
-    hash_password,
 )
-from app.core.schemas import Message
+from app.core.schemas import Message, UserId
 from app.database import SessionDep
 from app.database.models import User
 from . import responses as res
 from .schemas import (
-    UserBase,
     UserRegister,
     UserOut,
     UserSelectableField,
@@ -56,7 +51,7 @@ async def register(user: UserRegister, session: SessionDep, request: Request):
     token = create_jwt({"vrf": new_user.id}, timedelta(days=1))
     # TODO: send email to user
     print(request.url_for("verify_user", token=token)._url)
-    return UserBase.Id(id=new_user.id)
+    return UserId(id=new_user.id)
 
 
 @router.get("/verify/{token}", responses=res.verify_user)

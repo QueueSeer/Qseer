@@ -19,11 +19,11 @@ from app.core.security import (
     create_jwt,
     verify_password
 )
-from app.core.schemas import Message
+from app.core.schemas import Message, UserId
 from app.database import SessionDep
 from app.database.models import User, Seer, Admin
 from ..user.service import create_user
-from .schemas import UserId, UserLogin
+from .schemas import UserLogin
 from . import responses as res
 
 router = APIRouter(prefix="/access", tags=["Access"])

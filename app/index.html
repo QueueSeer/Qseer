@@ -57,7 +57,7 @@
             jwt_output.innerHTML = '<textarea id="output_token" wrap="soft" rows="3" readonly style="resize: none; overflow: none;">' 
                 + response.credential + '</textarea><button onclick="copyText()">Copy</button>';
             g_signin_doc = document.createElement('a');
-            g_signin_doc.href = './docs#/User/register_api_user_register_post';
+            g_signin_doc.href = './docs#/Access';
             g_signin_doc.className = 'basic-btn';
             g_signin_doc.innerHTML = 'Signed in as: ' + user_info.name;
             document.getElementById('center_align').appendChild(jwt_output);
