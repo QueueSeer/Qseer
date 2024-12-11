@@ -31,6 +31,13 @@ router = APIRouter(prefix="/seer", tags=["Seer"])
 
 @router.post("/signup", responses=res.seer_signup)
 async def seer_signup(seer_reg: SeerRegister, payload: UserJWTDep, session: SessionDep):
+    '''
+    สมัครเป็นหมอดู
+
+    - **experience**: ไม่บังคับ เป็นวันที่ เพื่อบอกประสบการณ์การดูดวง
+    - **description**: ไม่บังคับ คำอธิบาย แนะนำตัว
+    - **primary_skill**: ไม่บังคับ ศาสตร์ดูดวงหลัก
+    '''
     seer_id = create_seer(session, seer_reg, payload.sub)
     token = create_jwt({"seer_confirm": seer_id}, timedelta(days=1))
     # TODO: send email to user
@@ -38,8 +45,24 @@ async def seer_signup(seer_reg: SeerRegister, payload: UserJWTDep, session: Sess
     return UserId(id=seer_id)
 
 
-# ยืนยันการสมัครหมอดู
-# GET /confirm/{token}
+@router.get("/confirm/{token}", responses=res.seer_confirm)
+async def seer_confirm(token: str, session: SessionDep):
+    '''
+    ยืนยันการสมัครเป็นหมอดู
+    '''
+    payload = decode_jwt(token, require=["exp", "seer_confirm"])
+    seer_id = payload["seer_confirm"]
+    stmt = (
+        update(Seer).
+        where(Seer.id == seer_id, Seer.is_active == False).
+        values(is_active=True).
+        returning(Seer.id)
+    )
+    seer_id = session.scalars(stmt).one_or_none()
+    session.commit()
+    if seer_id is None:
+        raise HTTPException(400, "Already confirmed.")
+    return Message("Confirmation successful.")
 
 
 # ดูข้อมูลหมอดู [Public]

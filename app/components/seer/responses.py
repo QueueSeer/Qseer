@@ -19,3 +19,25 @@ seer_signup = {
     },
     **POSSIBLE_JWTCOOKIE_RESPONSE
 }
+
+seer_confirm = {
+    HTTP_200_OK: {
+        "content": {
+            "application/json": {
+                "example": {"message": "Confirmation successful."}
+            },
+        },
+        "description": "The seer's signup has confirmed successfully."
+    },
+    HTTP_400_BAD_REQUEST: {
+        "content": {
+            "application/json": {
+                "example": {
+                    "message": "Already confirmed."
+                }
+            },
+        },
+        "description": "The seer's signup has been confirmed or does not exist."
+    },
+    HTTP_403_FORBIDDEN: INVALID_TOKEN_EXAMPLE
+}
