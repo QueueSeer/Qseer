@@ -10,12 +10,10 @@ from .schemas import SeerRegister
 
 
 def create_seer(session: Session, seer_reg: SeerRegister, user_id: int) -> int:
+    reg_dict = seer_reg.model_dump(exclude_unset=True)
+    reg_dict["id"] = user_id
     try:
-        stmt = (
-            insert(Seer).
-            values(seer_reg.model_dump(exclude_unset=True), id=user_id).
-            returning(Seer.id)
-        )
+        stmt = insert(Seer).values(reg_dict).returning(Seer.id)
         seer_id = session.scalars(stmt).one()
         session.commit()
         return seer_id
