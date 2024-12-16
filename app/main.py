@@ -15,7 +15,7 @@ from app import (
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # startup
-    # database.create_tables()
+    # await database.create_tables()
     yield
     # shutdown
 

@@ -51,9 +51,9 @@ async def google_signin(credential: Annotated[str, Form()], session: SessionDep,
         join(Admin, isouter=True).
         where(User.email == idinfo['email'])
     )
-    row = session.execute(stmt).one_or_none()
+    row = (await session.execute(stmt)).one_or_none()
     if row is None:
-        user_id = create_user(session, User(
+        user_id = (await create_user(session, User(
             display_name = idinfo['name'],
             first_name   = idinfo['given_name'],
             last_name    = idinfo['family_name'],
@@ -61,7 +61,7 @@ async def google_signin(credential: Annotated[str, Form()], session: SessionDep,
             password     = None,
             image        = idinfo['picture'],
             is_active    = True
-        )).id
+        ))).id
         seer_id, admin_id = None, None
     else:
         user_id, seer_id, admin_id = row.id, row.seer_id, row.admin_id
@@ -89,8 +89,8 @@ async def login(user: UserLogin, session: SessionDep, response: Response):
         join(Admin, isouter=True).
         where(User.email == user.email, User.is_active == True)
     )
-    row = session.execute(stmt).one_or_none()
-    session.commit()
+    row = (await session.execute(stmt)).one_or_none()
+    await session.commit()
     hashed_password = row.password if row is not None else None
     if not verify_password(user.password, hashed_password):
         raise HTTPException(status_code=404, detail="User not found.")
@@ -123,8 +123,8 @@ async def refresh(payload: UserJWTDep, session: SessionDep, response: Response):
         join(Admin, isouter=True).
         where(User.id == user_id, User.is_active == True)
     )
-    row = session.execute(stmt).one_or_none()
-    session.commit()
+    row = (await session.execute(stmt)).one_or_none()
+    await session.commit()
     if row is None:
         response.delete_cookie(COOKIE_NAME)
         raise HTTPException(status_code=404, detail="User not found.")

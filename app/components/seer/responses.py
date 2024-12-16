@@ -41,3 +41,20 @@ seer_confirm = {
     },
     HTTP_403_FORBIDDEN: INVALID_TOKEN_EXAMPLE
 }
+
+seer_info = {
+    HTTP_200_OK: {
+        "model": SeerOut,
+        "description": "Seer information."
+    },
+    HTTP_404_NOT_FOUND: {
+        "content": {
+            "application/json": {
+                "example": {
+                    "message": "Seer not found."
+                }
+            },
+        },
+        "description": "Seer does not exist."
+    }
+}

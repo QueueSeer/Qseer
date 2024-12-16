@@ -23,6 +23,7 @@ from sqlalchemy import (
     and_,
     text,
 )
+from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
@@ -84,7 +85,7 @@ intPK_seerFK = Annotated[
 ]
 
 
-class Base(DeclarativeBase):
+class Base(AsyncAttrs, DeclarativeBase):
     pass
 
 
@@ -102,6 +103,15 @@ FollowSeer = Table(
 )
 
 
+'''
+ █████  █████                           
+  ███    ███                            
+  ███    ███   █████   ██████  ████████ 
+  ███    ███  ███     ███  ███  ███  ███
+  ███    ███   █████  ███████   ███     
+  ███    ███      ███ ███       ███     
+   ████████   ██████   ██████  █████    
+'''
 class User(Base):
     __tablename__ = "userAccount"
 
@@ -191,6 +201,15 @@ class Admin(Base):
     )
 
 
+'''
+  █████████                             
+ ███     ███                            
+ ███          ██████   ██████  ████████ 
+  █████████  ███  ███ ███  ███  ███  ███
+         ███ ███████  ███████   ███     
+ ███     ███ ███      ███       ███     
+  █████████   ██████   ██████  █████    
+'''
 class Seer(Base):
     __tablename__ = "seer"
 
@@ -297,6 +316,18 @@ class Withdrawal(Base):
     # seer: Mapped[Seer] = relationship(back_populates="withdrawals")
 
 
+'''
+ ███████████                     █████                                 
+  ███     ███                     ███                                  
+  ███     ███  ██████    ██████   ███ █████  ██████    ███████  ██████ 
+  ██████████       ███  ███  ███  ███  ███       ███  ███  ███ ███  ███
+  ███          ███████  ███       ██████     ███████  ███  ███ ███████ 
+  ███         ███  ███  ███  ███  ███  ███  ███  ███  ███  ███ ███     
+ █████         ████████  ██████  ████ █████  ████████  ███████  ██████ 
+                                                           ███         
+                                                      ███  ███         
+                                                       ██████          
+'''
 class FortunePackage(Base):
     __tablename__ = "fortunePackage"
 

@@ -47,7 +47,7 @@ async def register(user: UserRegister, session: SessionDep, request: Request):
     - **properties**: ไม่บังคับ ระบุคุณสมบัติเพิ่มเติม
      อย่างเช่น **reading_type** (ชนิดการดูดวง) และ **interested_topics** (เรื่องที่สนใจ)
     """
-    new_user = create_user(session, User(**user.model_dump()))
+    new_user = await create_user(session, User(**user.model_dump()))
     token = create_jwt({"vrf": new_user.id}, timedelta(days=1))
     # TODO: send email to user
     print(request.url_for("verify_user", token=token)._url)
@@ -72,8 +72,8 @@ async def verify_user(token: str, session: SessionDep):
         values(is_active=True).
         returning(User.id)
     )
-    user_id = session.execute(stmt).scalar_one_or_none()
-    session.commit()
+    user_id = (await session.execute(stmt)).scalar_one_or_none()
+    await session.commit()
     if user_id is None:
         raise HTTPException(status_code=400, detail="User has been verified.")
     return Message("User verified.")
@@ -85,10 +85,10 @@ async def get_self_info(payload: UserJWTDep, session: SessionDep):
     ดึงข้อมูลของผู้ใช้งานของตัวเอง แต่ไม่รวม date_created และ properties
     '''
     user_id = payload.sub
-    user = session.execute(
+    user = (await session.execute(
         select(User).
         where(User.id == user_id, User.is_active == True)
-    ).scalar_one_or_none()
+    )).scalar_one_or_none()
     return UserOut.model_validate(user)
 
  
@@ -110,8 +110,8 @@ async def update_self_info(user: UserUpdate, payload: UserJWTDep, session: Sessi
         values(**user_values).
         returning(*user_cols)
     )
-    result = session.execute(stmt).one_or_none()
-    session.commit()
+    result = (await session.execute(stmt)).one_or_none()
+    await session.commit()
     if result is None:
         raise HTTPException(status_code=404, detail="User not found.")
     return result._asdict()
@@ -131,8 +131,8 @@ async def get_self_field(
         select(User.__dict__[field]).
         where(User.id == user_id, User.is_active == True)
     )
-    result = session.execute(stmt).scalar_one_or_none()
-    session.commit()
+    result = (await session.execute(stmt)).scalar_one_or_none()
+    await session.commit()
     if result is None:
         raise HTTPException(status_code=404, detail="User not found.")
     return {field: result}
@@ -155,6 +155,6 @@ async def delete_user(id: int = None, session: SessionDep = None):
     if id is not None:
         stmt = stmt.where(User.id == id)
     stmt = stmt.returning(User.id)
-    result = session.execute(stmt)
-    session.commit()
+    result = await session.execute(stmt)
+    await session.commit()
     return {"statement": str(stmt), "result": result.scalars().all()}
