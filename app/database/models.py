@@ -116,6 +116,7 @@ class User(Base):
     __tablename__ = "userAccount"
 
     id: Mapped[intPK] = mapped_column(Identity())
+    username: Mapped[strText] = mapped_column(unique=True)
     display_name: Mapped[strText]
     first_name: Mapped[strText]
     last_name: Mapped[strText]

@@ -36,6 +36,7 @@ async def register(user: UserRegister, session: SessionDep, request: Request):
     """
     สมัครบัญชีผู้ใช้งานฝั่งลูกค้า:
 
+    - **username**: required
     - **display_name**: required
     - **first_name**: required
     - **last_name**: required

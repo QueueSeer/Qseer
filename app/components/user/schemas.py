@@ -13,6 +13,7 @@ from app.core.security import hash_password
 
 
 class UserRegister(BaseModel):
+    username: str = Field(min_length=3, examples=["sanfong"])
     display_name: str = Field(min_length=3, examples=["Sanfong"])
     first_name: str = Field(min_length=1, examples=["Apinyawat"])
     last_name: str = Field(min_length=1, examples=["Khwanpruk"])
@@ -44,6 +45,7 @@ class UserRegister(BaseModel):
 
 class UserOut(BaseModel):
     id: int = Field(examples=[1])
+    username: str = Field(examples=["sanfong"])
     display_name: str = Field(examples=["Sanfong"])
     first_name: str = Field(examples=["Apinyawat"])
     last_name: str = Field(examples=["Khwanpruk"])
@@ -60,6 +62,7 @@ class UserOut(BaseModel):
 
 class UserSelectableField(str, Enum):
     id = "id"
+    username = "username"
     display_name = "display_name"
     first_name = "first_name"
     last_name = "last_name"

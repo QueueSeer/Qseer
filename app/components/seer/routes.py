@@ -73,6 +73,7 @@ async def seer_info(seer_id: int, session: SessionDep):
     stmt = (
         select(
             User.id,
+            User.username,
             User.display_name,
             User.first_name,
             User.last_name,

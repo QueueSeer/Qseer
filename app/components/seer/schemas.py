@@ -10,6 +10,7 @@ class SeerRegister(BaseModel):
 
 class SeerOut(BaseModel):
     id: int
+    username: str
     display_name: str
     first_name: str
     last_name: str
