@@ -1,6 +1,33 @@
+from typing import Mapping
 from fastapi import Request, status
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException
+
+
+class BadRequestException(HTTPException):
+    '''
+    For 400 Bad Request.
+    '''
+
+    def __init__(self, detail, headers: Mapping[str, str] | None = None):
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=detail,
+            headers=headers
+        )
+
+
+class NotFoundException(HTTPException):
+    '''
+    For 404 Not Found.
+    '''
+
+    def __init__(self, detail, headers: Mapping[str, str] | None = None):
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=detail,
+            headers=headers
+        )
 
 
 class JSONException(HTTPException):
@@ -14,7 +41,7 @@ class IntegrityException(JSONException):
     For database integrity exceptions.
     '''
 
-    def __init__(self, detail, headers: dict[str, str] | None = None):
+    def __init__(self, detail, headers: Mapping[str, str] | None = None):
         super().__init__(
             status_code=status.HTTP_409_CONFLICT,
             detail=detail,
@@ -27,7 +54,7 @@ class InternalException(JSONException):
     For Internal Server Error.
     '''
 
-    def __init__(self, detail, headers: dict[str, str] | None = None):
+    def __init__(self, detail, headers: Mapping[str, str] | None = None):
         super().__init__(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=detail,

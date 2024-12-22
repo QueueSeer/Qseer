@@ -1,4 +1,4 @@
-from app.core.schemas import UserId
+from app.core.schemas import RowCount, UserId
 from ..responses import *
 from .schemas import *
 
@@ -57,4 +57,65 @@ seer_info = {
         },
         "description": "Seer does not exist."
     }
+}
+
+seer_calendar = {
+    HTTP_200_OK: {
+        "model": SeerCalendar,
+        "description": "Seer's calendar."
+    }
+}
+
+seer_schedule = {
+    HTTP_201_CREATED: {
+        "model": SeerScheduleId,
+        "description": "Schedule created."
+    },
+    **POSSIBLE_JWTCOOKIE_RESPONSE
+}
+
+update_seer_schedule = {
+    HTTP_200_OK: {
+        "model": SeerScheduleOut,
+        "description": "Schedule updated."
+    },
+    HTTP_404_NOT_FOUND: {
+        "content": {
+            "application/json": {
+                "example": {
+                    "message": "Schedule not found."
+                }
+            },
+        },
+        "description": "Schedule does not exist."
+    },
+    **POSSIBLE_JWTCOOKIE_RESPONSE
+}
+
+delete_seer_schedule = {
+    HTTP_200_OK: {
+        "model": RowCount,
+        "description": "Returned the number of deleted schedules."
+    },
+    **POSSIBLE_JWTCOOKIE_RESPONSE
+}
+
+seer_dayoff = {
+    HTTP_201_CREATED: {
+        "content": {
+            "application/json": {
+                "example": {"message": "Day off added."}
+            },
+        },
+        "description": "Day off added."
+    },
+    **POSSIBLE_JWTCOOKIE_RESPONSE
+}
+
+delete_seer_dayoff = {
+    HTTP_200_OK: {
+        "model": RowCount,
+        "description": "Returned the number of deleted day offs."
+    },
+    **POSSIBLE_JWTCOOKIE_RESPONSE
 }

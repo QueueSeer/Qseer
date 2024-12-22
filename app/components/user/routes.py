@@ -8,6 +8,7 @@ from fastapi import (
 from sqlalchemy import delete, select, update
 
 from app.core.deps import UserJWTDep
+from app.core.error import BadRequestException, NotFoundException
 from app.core.security import (
     create_jwt,
     decode_jwt,
@@ -76,7 +77,7 @@ async def verify_user(token: str, session: SessionDep):
     user_id = (await session.execute(stmt)).scalar_one_or_none()
     await session.commit()
     if user_id is None:
-        raise HTTPException(status_code=400, detail="User has been verified.")
+        raise BadRequestException("User has been verified.")
     return Message("User verified.")
 
 
@@ -114,7 +115,7 @@ async def update_self_info(user: UserUpdate, payload: UserJWTDep, session: Sessi
     result = (await session.execute(stmt)).one_or_none()
     await session.commit()
     if result is None:
-        raise HTTPException(status_code=404, detail="User not found.")
+        raise NotFoundException("User not found.")
     return result._asdict()
 
 
@@ -135,7 +136,7 @@ async def get_self_field(
     result = (await session.execute(stmt)).scalar_one_or_none()
     await session.commit()
     if result is None:
-        raise HTTPException(status_code=404, detail="User not found.")
+        raise NotFoundException("User not found.")
     return {field: result}
 
 

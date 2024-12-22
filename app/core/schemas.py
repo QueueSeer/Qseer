@@ -20,3 +20,7 @@ class TokenPayload(BaseModel):
 
 class UserId(BaseModel):
     id: int = Field(examples=[1])
+
+
+class RowCount(BaseModel):
+    count: int

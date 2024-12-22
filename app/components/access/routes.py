@@ -8,6 +8,7 @@ from fastapi import (
     Response,
     Form,
 )
+from pydantic import Field
 from sqlalchemy import select
 
 from app.core.config import settings
@@ -30,9 +31,14 @@ router = APIRouter(prefix="/access", tags=["Access"])
 
 
 @router.post("/google/signin", responses=res.google_signin)
-async def google_signin(credential: Annotated[str, Form()], session: SessionDep, response: Response):
+async def google_signin(
+    credential: Annotated[str, Form()],
+    session: SessionDep,
+    response: Response,
+    username: Annotated[str, Form(min_length=3)] = None,
+):
     '''
-    เข้าสู่ระบบด้วย Google Sign-In ถ้าไม่มีบัญชีในระบบจะสร้างให้อัตโนมัติ
+    เข้าสู่ระบบด้วย Google Sign-In ถ้าไม่มีบัญชีในระบบจะต้องใส่ username ด้วย
     '''
     try:
         idinfo = id_token.verify_oauth2_token(
@@ -41,19 +47,26 @@ async def google_signin(credential: Annotated[str, Form()], session: SessionDep,
             settings.GOOGLE_CLIENT_ID
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(403, detail=str(e))
 
     if not idinfo['email_verified']:
-        raise HTTPException(status_code=400, detail="Email not verified.")
+        raise HTTPException(403, detail="Email not verified.")
     stmt = (
-        select(User.id, User.is_active, Seer.id.label("seer_id"), Admin.id.label("admin_id")).
+        select(
+            User.id,
+            User.is_active,
+            Seer.id.label("seer_id"),
+            Admin.id.label("admin_id")).
         join(User.seer, isouter=True).
         join(Admin, isouter=True).
         where(User.email == idinfo['email'])
     )
     row = (await session.execute(stmt)).one_or_none()
     if row is None:
+        if not username:
+            raise HTTPException(400, detail="Username is required.")
         user_id = (await create_user(session, User(
+            username     = username,
             display_name = idinfo['name'],
             first_name   = idinfo['given_name'],
             last_name    = idinfo['family_name'],
@@ -66,7 +79,7 @@ async def google_signin(credential: Annotated[str, Form()], session: SessionDep,
     else:
         user_id, seer_id, admin_id = row.id, row.seer_id, row.admin_id
         if not row.is_active:
-            raise HTTPException(status_code=404, detail="User not found.")
+            raise HTTPException(404, detail="User not found.")
 
     set_credential_cookie((user_id, seer_id, admin_id), response)
     return UserId(id=user_id)

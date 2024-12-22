@@ -10,6 +10,14 @@ google_signin = {
     HTTP_400_BAD_REQUEST: {
         "content": {
             "application/json": {
+                "example": {"detail": "Username is required."}
+            }
+        },
+        "description": "Username is missing."
+    },
+    HTTP_403_FORBIDDEN: {
+        "content": {
+            "application/json": {
                 "example": {"detail": "Token expired, T < T+1"}
             }
         },

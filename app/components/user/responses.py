@@ -64,5 +64,13 @@ update_self_info = {
         "model": UserUpdate,
         "description": "User information updated."
     },
+    HTTP_404_NOT_FOUND: {
+        "content": {
+            "application/json": {
+                "example": {"detail": "User not found."}
+            }
+        },
+        "description": "The user is likely inactive or has been deleted."
+    },
     **POSSIBLE_JWTCOOKIE_RESPONSE
 }

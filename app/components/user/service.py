@@ -1,11 +1,11 @@
-from psycopg.errors import UniqueViolation, UndefinedTable
+from psycopg.errors import NotNullViolation, UniqueViolation, UndefinedTable
 from sqlalchemy.exc import IntegrityError, ProgrammingError, OperationalError
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.error import IntegrityException, InternalException
 from app.database.models import User
-from app.database.utils import parse_unique_violation
+from app.database.utils import parse_unique_violation, parse_not_null_violation
 
 
 async def create_user(session: AsyncSession, new_user: User) -> User:
@@ -17,6 +17,8 @@ async def create_user(session: AsyncSession, new_user: User) -> User:
         detail = {"type": "IntegrityError", "detail": "Unknown error."}
         if isinstance(e.orig, UniqueViolation):
             detail = parse_unique_violation(e.orig)
+        elif isinstance(e.orig, NotNullViolation):
+            detail = parse_not_null_violation(e.orig)
         raise IntegrityException(detail=detail)
     except ProgrammingError as e:
         detail = {"detail": "ProgrammingError"}
