@@ -15,9 +15,8 @@ security = HTTPBearer(bearerFormat="test", scheme_name="JWT", description="JWT T
 
 @router.get("/")
 async def test():
-    if settings.DEVELOPMENT == False :
-        raise HTTPException(status_code=503, detail='only available on dev server')
-    
+    from app.email import send_verify_email
+    #await send_verify_email("wikimarurng@gmail.com","backend.qseer.app")
     return [{"test": "Test"}]
 
 # @router.post("/upload")

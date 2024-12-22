@@ -141,7 +141,9 @@ async def get_self_field(
 
 # ติดตามหมอดู
 # POST /follow/{seer_id}
-
+@router.post("/follow/{seer_id}", responses=res.get_self_field)
+async def get_self_field():
+    pass
 
 # เลิกติดตามหมอดู
 # DELETE /follow/{seer_id}
