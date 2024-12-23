@@ -35,7 +35,6 @@ async def google_signin(
     credential: Annotated[str, Form()],
     session: SessionDep,
     response: Response,
-    username: Annotated[str, Form(min_length=3)] = None,
 ):
     '''
     เข้าสู่ระบบด้วย Google Sign-In ถ้าไม่มีบัญชีในระบบจะต้องใส่ username ด้วย
@@ -63,8 +62,6 @@ async def google_signin(
     )
     row = (await session.execute(stmt)).one_or_none()
     if row is None:
-        if not username:
-            raise HTTPException(400, detail="Username is required.")
         user_id = (await create_user(session, User(
             username     = None,
             display_name = idinfo['name'],
