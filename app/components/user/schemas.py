@@ -4,12 +4,12 @@ from typing import Any
 from pydantic import (
     BaseModel,
     ConfigDict,
-    EmailStr,
     Field,
     field_validator,
 )
 
 from app.core.security import hash_password
+from app.core.deps import EmailLower
 
 
 class UserRegister(BaseModel):
@@ -17,7 +17,7 @@ class UserRegister(BaseModel):
     display_name: str = Field(min_length=3, examples=["Sanfong"])
     first_name: str = Field(min_length=1, examples=["Apinyawat"])
     last_name: str = Field(min_length=1, examples=["Khwanpruk"])
-    email: EmailStr = Field(examples=["64010972@kmitl.ac.th"])
+    email: EmailLower = Field(examples=["64010972@kmitl.ac.th"])
     phone_number: str | None = (
         Field(None, min_length=10, max_length=10, examples=["0812345678"])
     )
@@ -49,7 +49,7 @@ class UserOut(BaseModel):
     display_name: str = Field(examples=["Sanfong"])
     first_name: str = Field(examples=["Apinyawat"])
     last_name: str = Field(examples=["Khwanpruk"])
-    email: EmailStr = Field(examples=["64010972@kmitl.ac.th"])
+    email: EmailLower = Field(examples=["64010972@kmitl.ac.th"])
     birthdate: dt.datetime = (
         Field(None, examples=["2002-10-03T19:00:00+07:00"])
     )

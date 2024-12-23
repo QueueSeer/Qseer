@@ -1,7 +1,7 @@
 from typing import Any, Annotated, Generic, TypeVar
 
 from fastapi.security import APIKeyCookie, HTTPBearer
-from pydantic import BaseModel
+from pydantic import AfterValidator, BaseModel, EmailStr
 from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_403_FORBIDDEN
 from fastapi import Depends, HTTPException, Request
 
@@ -64,3 +64,5 @@ def user_with_admin_permission(token: TokenPayload = Depends(cookie_scheme)):
 UserJWTDep = Annotated[TokenPayload, Depends(cookie_scheme)]
 SeerJWTDep = Annotated[TokenPayload, Depends(user_with_seer_permission)]
 AdminJWTDep = Annotated[TokenPayload, Depends(user_with_admin_permission)]
+
+EmailLower = Annotated[EmailStr, AfterValidator(str.lower)]
