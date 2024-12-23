@@ -27,7 +27,6 @@ from .service import create_user
 
 router = APIRouter(prefix="/user", tags=["User"])
 
-
 @router.post(
     "/register",
     status_code=status.HTTP_201_CREATED,
@@ -143,7 +142,7 @@ async def get_self_field(
 # ติดตามหมอดู
 # POST /follow/{seer_id}
 @router.post("/follow/{seer_id}", responses=res.get_self_field)
-async def get_self_field():
+async def get_follow_seer():
     pass
 
 # เลิกติดตามหมอดู
