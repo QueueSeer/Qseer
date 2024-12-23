@@ -1,6 +1,7 @@
 from datetime import timedelta
 from fastapi import (
     APIRouter,
+    BackgroundTasks,
     HTTPException,
     Request,
     status,
@@ -9,7 +10,11 @@ from sqlalchemy import delete, select, update
 
 from app.core.config import settings
 from app.core.deps import UserJWTDep
-from app.core.error import BadRequestException, NotFoundException
+from app.core.error import (
+    BadRequestException,
+    NotFoundException,
+    InternalException
+)
 from app.core.security import (
     create_jwt,
     decode_jwt,
@@ -34,7 +39,12 @@ router = APIRouter(prefix="/user", tags=["User"])
     status_code=status.HTTP_201_CREATED,
     responses=res.register
 )
-async def register(user: UserRegister, session: SessionDep, request: Request):
+async def register(
+    user: UserRegister,
+    session: SessionDep,
+    request: Request,
+    bg_tasks: BackgroundTasks
+):
     """
     สมัครบัญชีผู้ใช้งานฝั่งลูกค้า:
 
@@ -52,8 +62,9 @@ async def register(user: UserRegister, session: SessionDep, request: Request):
     """
     new_user = await create_user(session, User(**user.model_dump()))
     token = create_jwt({"vrf": new_user.id}, timedelta(days=1))
-    if settings.DEVELOPMENT:
-        await send_verify_email(
+    if not settings.DEVELOPMENT:
+        bg_tasks.add_task(
+            send_verify_email,
             user.email,
             request.url_for("verify_user", token=token)._url
         )

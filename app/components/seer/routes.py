@@ -1,6 +1,7 @@
 from datetime import timedelta
 from fastapi import (
     APIRouter,
+    BackgroundTasks,
     HTTPException,
     Request,
     status,
@@ -34,7 +35,8 @@ async def seer_signup(
     seer_reg: SeerRegister,
     payload: UserJWTDep,
     session: SessionDep,
-    request: Request
+    request: Request,
+    bg_tasks: BackgroundTasks
 ):
     '''
     สมัครเป็นหมอดู
@@ -45,10 +47,10 @@ async def seer_signup(
     '''
     seer_id = await create_seer(session, seer_reg, payload.sub)
     token = create_jwt({"seer_confirm": seer_id}, timedelta(days=1))
-    if settings.DEVELOPMENT:
-        email = await get_user_email(payload.sub, session)
-        await send_verify_email(
-            email,
+    if not settings.DEVELOPMENT:
+        bg_tasks.add_task(
+            send_verify_email,
+            await get_user_email(payload.sub, session),
             request.url_for("seer_confirm", token=token)._url
         )
     else:
