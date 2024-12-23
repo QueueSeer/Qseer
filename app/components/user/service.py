@@ -1,9 +1,19 @@
 from psycopg.errors import NotNullViolation, UniqueViolation, UndefinedTable
-from sqlalchemy.exc import IntegrityError, ProgrammingError, OperationalError
+from sqlalchemy import select
+from sqlalchemy.exc import (
+    IntegrityError,
+    ProgrammingError,
+    OperationalError,
+    NoResultFound,
+)
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.error import IntegrityException, InternalException
+from app.core.error import (
+    IntegrityException,
+    InternalException,
+    NotFoundException
+)
 from app.database.models import User
 from app.database.utils import parse_unique_violation, parse_not_null_violation
 
@@ -29,3 +39,12 @@ async def create_user(session: AsyncSession, new_user: User) -> User:
         detail = {"detail": "Connection with database failed."}
         raise InternalException(detail=detail)
     return new_user
+
+
+async def get_user_email(user_id: int, session: AsyncSession) -> str:
+    try:
+        stmt = select(User.email).where(
+            User.id == user_id, User.is_active == True)
+        return (await session.scalars(stmt)).one()
+    except NoResultFound:
+        raise NotFoundException("User not found.")

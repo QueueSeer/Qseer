@@ -66,7 +66,7 @@ async def google_signin(
         if not username:
             raise HTTPException(400, detail="Username is required.")
         user_id = (await create_user(session, User(
-            username     = username,
+            username     = None,
             display_name = idinfo['name'],
             first_name   = idinfo['given_name'],
             last_name    = idinfo['family_name'],

@@ -7,6 +7,7 @@ from fastapi import (
 )
 from sqlalchemy import delete, select, update
 
+from app.core.config import settings
 from app.core.deps import UserJWTDep
 from app.core.error import BadRequestException, NotFoundException
 from app.core.security import (
@@ -16,6 +17,7 @@ from app.core.security import (
 from app.core.schemas import Message, UserId
 from app.database import SessionDep
 from app.database.models import User
+from app.email import send_verify_email
 from . import responses as res
 from .schemas import (
     UserRegister,
@@ -50,8 +52,13 @@ async def register(user: UserRegister, session: SessionDep, request: Request):
     """
     new_user = await create_user(session, User(**user.model_dump()))
     token = create_jwt({"vrf": new_user.id}, timedelta(days=1))
-    # TODO: send email to user
-    print(request.url_for("verify_user", token=token)._url)
+    if settings.DEVELOPMENT:
+        await send_verify_email(
+            user.email,
+            request.url_for("verify_user", token=token)._url
+        )
+    else:
+        print(token)
     return UserId(id=new_user.id)
 
 

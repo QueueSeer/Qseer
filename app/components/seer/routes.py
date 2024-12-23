@@ -2,6 +2,7 @@ from datetime import timedelta
 from fastapi import (
     APIRouter,
     HTTPException,
+    Request,
     status,
 )
 from sqlalchemy import delete, insert, select, update
@@ -17,7 +18,9 @@ from app.core.security import (
 from app.core.schemas import Message, UserId, RowCount
 from app.database import SessionDep
 from app.database.models import Seer, User, Schedule, DayOff
+from app.email.service import send_verify_email
 
+from ..user.service import get_user_email
 from . import responses as res
 from .schemas import *
 from .service import *
@@ -27,7 +30,12 @@ router = APIRouter(prefix="/seer", tags=["Seer"])
 
 
 @router.post("/signup", responses=res.seer_signup)
-async def seer_signup(seer_reg: SeerRegister, payload: UserJWTDep, session: SessionDep):
+async def seer_signup(
+    seer_reg: SeerRegister,
+    payload: UserJWTDep,
+    session: SessionDep,
+    request: Request
+):
     '''
     สมัครเป็นหมอดู
 
@@ -37,8 +45,14 @@ async def seer_signup(seer_reg: SeerRegister, payload: UserJWTDep, session: Sess
     '''
     seer_id = await create_seer(session, seer_reg, payload.sub)
     token = create_jwt({"seer_confirm": seer_id}, timedelta(days=1))
-    # TODO: send email to user
-    print(token)
+    if settings.DEVELOPMENT:
+        email = await get_user_email(payload.sub, session)
+        await send_verify_email(
+            email,
+            request.url_for("seer_confirm", token=token)._url
+        )
+    else:
+        print(token)
     return UserId(id=seer_id)
 
 
