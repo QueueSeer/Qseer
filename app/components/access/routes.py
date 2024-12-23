@@ -78,7 +78,7 @@ async def google_signin(
         if not row.is_active:
             raise HTTPException(404, detail="User not found.")
 
-    set_credential_cookie((user_id, seer_id, admin_id), response)
+    set_credential_cookie(user_id, seer_id, admin_id, response)
     return UserId(id=user_id)
 
 
@@ -104,7 +104,7 @@ async def login(user: UserLogin, session: SessionDep, response: Response):
     hashed_password = row.password if row is not None else None
     if not verify_password(user.password, hashed_password):
         raise HTTPException(status_code=404, detail="User not found.")
-    set_credential_cookie(row, response)
+    set_credential_cookie(row.id, row.seer_id, row.admin_id, response)
     return UserId(id=row.id)
 
 
@@ -138,7 +138,7 @@ async def refresh(payload: UserJWTDep, session: SessionDep, response: Response):
     if row is None:
         response.delete_cookie(COOKIE_NAME)
         raise HTTPException(status_code=404, detail="User not found.")
-    set_credential_cookie(row, response)
+    set_credential_cookie(row.id, row.seer_id, row.admin_id, response)
     return UserId(id=row.id)
 
 
@@ -150,8 +150,7 @@ async def check_cookie(payload: UserJWTDep):
     return payload
 
 
-def set_credential_cookie(row, response: Response):
-    user_id, seer_id, admin_id = row
+def set_credential_cookie(user_id, seer_id, admin_id, response: Response):
     roles = []
     if seer_id is not None:
         roles.append("seer")
