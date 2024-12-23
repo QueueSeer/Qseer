@@ -55,7 +55,7 @@ async def get_seer_info(seer_id: int, session: AsyncSession) -> SeerOut:
     return SeerOut.model_validate(seer)
 
 
-async def is_seer_exist(seer_id: int, session: AsyncSession):
+async def check_active_seer(seer_id: int, session: AsyncSession):
     stmt = (
         select(Seer.id).
         join(User, Seer.id == User.id).

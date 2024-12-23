@@ -62,7 +62,7 @@ def decode_jwt(token: str, require: tuple = ()) -> dict[str, Any]:
         raise HTTPException(
             status_code=HTTP_403_FORBIDDEN, detail=str(e)
         )
-    except InvalidTokenError:
+    except InvalidTokenError as e:
         raise HTTPException(
-            status_code=HTTP_403_FORBIDDEN, detail="Invalid token."
+            status_code=HTTP_403_FORBIDDEN, detail=f"Invalid token. {e}"
         )

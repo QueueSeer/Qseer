@@ -157,7 +157,7 @@ def set_credential_cookie(user_id, seer_id, admin_id, response: Response):
     if admin_id is not None:
         roles.append("admin")
     token = create_jwt(
-        {"sub": user_id, "roles": roles},
+        {"sub": str(user_id), "roles": roles},
         timedelta(days=7)
     )
     response.set_cookie(

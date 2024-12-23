@@ -63,6 +63,16 @@ seer_calendar = {
     HTTP_200_OK: {
         "model": SeerCalendar,
         "description": "Seer's calendar."
+    },
+    HTTP_404_NOT_FOUND: {
+        "content": {
+            "application/json": {
+                "example": {
+                    "message": "Seer not found."
+                }
+            },
+        },
+        "description": "Seer does not exist."
     }
 }
 

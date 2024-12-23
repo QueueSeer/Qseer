@@ -101,9 +101,11 @@ async def seer_calendar(seer_id: int, session: SessionDep):
     วันหยุดที่ส่งกลับมาจะไม่มีวันหยุดในอดีต
 
     day ภายใน schedules คือเลข 0-6 แทนวันจันทร์-อาทิตย์
-
-    API นี้ไม่มีการตรวจสอบว่าหมอดูมีอยู่จริงหรือไม่
     '''
+    try:
+        await check_active_seer(seer_id, session)
+    except NoResultFound:
+        raise NotFoundException("Seer not found.")
     return await get_calendar(seer_id, session)
 
 
