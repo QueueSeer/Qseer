@@ -5,7 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field
 timeTZ = Annotated[dt.time, Field(..., examples=['15:20:30.500+07:00'])]
 
 
-class SeerRegister(BaseModel):
+class SeerIn(BaseModel):
     experience: dt.date | None = None
     description: str = Field('', examples=['I am the doomsayer.'])
     primary_skill: str | None = Field(None, examples=['Super Shotgun'])

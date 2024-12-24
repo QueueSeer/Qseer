@@ -10,7 +10,7 @@ from app.database.utils import parse_unique_violation
 from .schemas import *
 
 
-async def create_seer(session: AsyncSession, seer_reg: SeerRegister, user_id: int) -> int:
+async def create_seer(session: AsyncSession, seer_reg: SeerIn, user_id: int) -> int:
     reg_dict = seer_reg.model_dump(exclude_unset=True)
     reg_dict["id"] = user_id
     try:

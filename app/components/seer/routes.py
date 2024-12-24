@@ -32,7 +32,7 @@ router = APIRouter(prefix="/seer", tags=["Seer"])
 
 @router.post("/signup", responses=res.seer_signup)
 async def seer_signup(
-    seer_reg: SeerRegister,
+    seer_reg: SeerIn,
     payload: UserJWTDep,
     session: SessionDep,
     request: Request,
@@ -78,63 +78,15 @@ async def seer_confirm(token: str, session: SessionDep):
     return Message("Confirmation successful.")
 
 
-@router.get("/{seer_id}", responses=res.seer_info)
-async def seer_info(seer_id: int, session: SessionDep):
-    '''
-    ดูข้อมูลหมอดู
-    '''
-    try:
-        return await get_seer_info(seer_id, session)
-    except NoResultFound:
-        raise NotFoundException("Seer not found.")
-
-
-@router.get("/{seer_id}/followers", responses=res.seer_followers)
-async def seer_followers(
-    session: SessionDep,
-    seer_id: int,
-    last_id: int = 0,
-    limit: int = 10
-):
-    '''
-    ดูรายชื่อผู้ติดตามหมอดู (ไม่ได้ตรวจสอบค่า is_active ของผู้ติดตาม)
-
-    Parameters:
-    - **last_id**: ไม่บังคับ กรองผู้ติดตามที่มี id มากกว่า last_id
-    - **limit**: ไม่บังคับ จำนวนผู้ติดตามที่ส่งกลับ
-    '''
-    return await get_seer_followers(session, seer_id, last_id, limit)
-
-
-@router.get("/{seer_id}/total_followers", responses=res.seer_total_followers)
-async def seer_total_followers(seer_id: int, session: SessionDep):
-    '''
-    ดูจำนวนผู้ติดตามหมอดู (ไม่ได้ตรวจสอบค่า is_active ของผู้ติดตาม)
-    '''
-    return RowCount(count=await get_seer_total_followers(session, seer_id))
-
-
-@router.get("/{seer_id}/calendar", responses=res.seer_calendar)
-async def seer_calendar(seer_id: int, session: SessionDep):
-    '''
-    ดูข้อมูลตารางเวลารายสัปดาห์และวันหยุดของหมอดู
-    วันหยุดที่ส่งกลับมาจะไม่มีวันหยุดในอดีต
-
-    day ภายใน schedules คือเลข 0-6 แทนวันจันทร์-อาทิตย์
-    '''
-    try:
-        await check_active_seer(seer_id, session)
-    except NoResultFound:
-        raise NotFoundException("Seer not found.")
-    return await get_calendar(seer_id, session)
+# PATCH /me
 
 
 @router.post(
     "/me/schedule",
     status_code=status.HTTP_201_CREATED,
-    responses=res.seer_schedule
+    responses=res.create_seer_schedule
 )
-async def seer_schedule(schedule: SeerScheduleIn, payload: SeerJWTDep, session: SessionDep):
+async def create_seer_schedule(schedule: SeerScheduleIn, payload: SeerJWTDep, session: SessionDep):
     '''
     สร้างตารางเวลาหมอดู
 
@@ -196,3 +148,54 @@ async def delete_seer_dayoff(day_off: dt.date, payload: SeerJWTDep, session: Ses
     '''
     count = await delete_dayoff(day_off, payload.sub, session)
     return RowCount(count=count)
+
+
+@router.get("/{seer_id}", responses=res.seer_info)
+async def seer_info(seer_id: int, session: SessionDep):
+    '''
+    ดูข้อมูลหมอดู
+    '''
+    try:
+        return await get_seer_info(seer_id, session)
+    except NoResultFound:
+        raise NotFoundException("Seer not found.")
+
+
+@router.get("/{seer_id}/followers", responses=res.seer_followers)
+async def seer_followers(
+    session: SessionDep,
+    seer_id: int,
+    last_id: int = 0,
+    limit: int = 10
+):
+    '''
+    ดูรายชื่อผู้ติดตามหมอดู (ไม่ได้ตรวจสอบค่า is_active ของผู้ติดตาม)
+
+    Parameters:
+    - **last_id**: ไม่บังคับ กรองผู้ติดตามที่มี id มากกว่า last_id
+    - **limit**: ไม่บังคับ จำนวนผู้ติดตามที่ส่งกลับ
+    '''
+    return await get_seer_followers(session, seer_id, last_id, limit)
+
+
+@router.get("/{seer_id}/total_followers", responses=res.seer_total_followers)
+async def seer_total_followers(seer_id: int, session: SessionDep):
+    '''
+    ดูจำนวนผู้ติดตามหมอดู (ไม่ได้ตรวจสอบค่า is_active ของผู้ติดตาม)
+    '''
+    return RowCount(count=await get_seer_total_followers(session, seer_id))
+
+
+@router.get("/{seer_id}/calendar", responses=res.seer_calendar)
+async def seer_calendar(seer_id: int, session: SessionDep):
+    '''
+    ดูข้อมูลตารางเวลารายสัปดาห์และวันหยุดของหมอดู
+    วันหยุดที่ส่งกลับมาจะไม่มีวันหยุดในอดีต
+
+    day ภายใน schedules คือเลข 0-6 แทนวันจันทร์-อาทิตย์
+    '''
+    try:
+        await check_active_seer(seer_id, session)
+    except NoResultFound:
+        raise NotFoundException("Seer not found.")
+    return await get_calendar(seer_id, session)

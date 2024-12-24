@@ -42,55 +42,7 @@ seer_confirm = {
     HTTP_403_FORBIDDEN: INVALID_TOKEN_EXAMPLE
 }
 
-seer_info = {
-    HTTP_200_OK: {
-        "model": SeerOut,
-        "description": "Seer information."
-    },
-    HTTP_404_NOT_FOUND: {
-        "content": {
-            "application/json": {
-                "example": {
-                    "message": "Seer not found."
-                }
-            },
-        },
-        "description": "Seer does not exist."
-    }
-}
-
-seer_followers = {
-    HTTP_200_OK: {
-        "model": SeerFollowers,
-        "description": "List of followers."
-    }
-}
-
-seer_total_followers = {
-    HTTP_200_OK: {
-        "model": RowCount,
-        "description": "Total number of followers."
-    }
-}
-
-seer_calendar = {
-    HTTP_200_OK: {
-        "model": SeerCalendar,
-        "description": "Seer's calendar."
-    },
-    HTTP_404_NOT_FOUND: {
-        "content": {
-            "application/json": {
-                "example": {
-                    "message": "Seer not found."
-                }
-            },
-        },
-        "description": "Seer does not exist."
-    }
-}
-
-seer_schedule = {
+create_seer_schedule = {
     HTTP_201_CREATED: {
         "model": SeerScheduleId,
         "description": "Schedule created."
@@ -142,4 +94,52 @@ delete_seer_dayoff = {
         "description": "Returned the number of deleted day offs."
     },
     **POSSIBLE_JWTCOOKIE_RESPONSE
+}
+
+seer_info = {
+    HTTP_200_OK: {
+        "model": SeerOut,
+        "description": "Seer information."
+    },
+    HTTP_404_NOT_FOUND: {
+        "content": {
+            "application/json": {
+                "example": {
+                    "message": "Seer not found."
+                }
+            },
+        },
+        "description": "Seer does not exist."
+    }
+}
+
+seer_followers = {
+    HTTP_200_OK: {
+        "model": SeerFollowers,
+        "description": "List of followers."
+    }
+}
+
+seer_total_followers = {
+    HTTP_200_OK: {
+        "model": RowCount,
+        "description": "Total number of followers."
+    }
+}
+
+seer_calendar = {
+    HTTP_200_OK: {
+        "model": SeerCalendar,
+        "description": "Seer's calendar."
+    },
+    HTTP_404_NOT_FOUND: {
+        "content": {
+            "application/json": {
+                "example": {
+                    "message": "Seer not found."
+                }
+            },
+        },
+        "description": "Seer does not exist."
+    }
 }
