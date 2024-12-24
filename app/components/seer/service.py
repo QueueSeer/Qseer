@@ -56,6 +56,10 @@ async def get_seer_info(seer_id: int, session: AsyncSession) -> SeerOut:
 
 
 async def check_active_seer(seer_id: int, session: AsyncSession):
+    '''
+    return `seer_id` if seer is active,
+    otherwise raise `NoResultFound` exception
+    '''
     stmt = (
         select(Seer.id).
         join(User, Seer.id == User.id).
