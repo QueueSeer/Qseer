@@ -59,6 +59,20 @@ seer_info = {
     }
 }
 
+seer_followers = {
+    HTTP_200_OK: {
+        "model": SeerFollowers,
+        "description": "List of followers."
+    }
+}
+
+seer_total_followers = {
+    HTTP_200_OK: {
+        "model": RowCount,
+        "description": "Total number of followers."
+    }
+}
+
 seer_calendar = {
     HTTP_200_OK: {
         "model": SeerCalendar,

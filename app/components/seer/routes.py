@@ -89,9 +89,29 @@ async def seer_info(seer_id: int, session: SessionDep):
         raise NotFoundException("Seer not found.")
 
 
-# ดูรายชื่อผู้ติดตามหมอดู
-# id, username, display_name, image
-# GET /{seer_id}/followers
+@router.get("/{seer_id}/followers", responses=res.seer_followers)
+async def seer_followers(
+    session: SessionDep,
+    seer_id: int,
+    last_id: int = 0,
+    limit: int = 10
+):
+    '''
+    ดูรายชื่อผู้ติดตามหมอดู (ไม่ได้ตรวจสอบค่า is_active ของผู้ติดตาม)
+
+    Parameters:
+    - **last_id**: ไม่บังคับ กรองผู้ติดตามที่มี id มากกว่า last_id
+    - **limit**: ไม่บังคับ จำนวนผู้ติดตามที่ส่งกลับ
+    '''
+    return await get_seer_followers(session, seer_id, last_id, limit)
+
+
+@router.get("/{seer_id}/total_followers", responses=res.seer_total_followers)
+async def seer_total_followers(seer_id: int, session: SessionDep):
+    '''
+    ดูจำนวนผู้ติดตามหมอดู (ไม่ได้ตรวจสอบค่า is_active ของผู้ติดตาม)
+    '''
+    return RowCount(count=await get_seer_total_followers(session, seer_id))
 
 
 @router.get("/{seer_id}/calendar", responses=res.seer_calendar)

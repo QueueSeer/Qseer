@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError, ProgrammingError, OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.error import IntegrityException, InternalException
-from app.database.models import User, Seer, Schedule, DayOff
+from app.database.models import User, Seer, Schedule, DayOff, FollowSeer
 from app.database.utils import parse_unique_violation
 from .schemas import *
 
@@ -64,6 +64,33 @@ async def check_active_seer(seer_id: int, session: AsyncSession):
             User.is_active == True,
             Seer.is_active == True
         )
+    )
+    return (await session.scalars(stmt)).one()
+
+
+async def get_seer_followers(
+    session: AsyncSession,
+    seer_id: int,
+    last_id: int = 0,
+    limit: int = 10
+):
+    stmt = (
+        select(User.id, User.username, User.display_name, User.image).
+        join_from(FollowSeer, User, FollowSeer.c.user_id == User.id).
+        where(
+            FollowSeer.c.seer_id == seer_id,
+            User.id > last_id
+        ).
+        order_by(User.id).limit(limit)
+    )
+    followers = (await session.execute(stmt)).all()
+    return SeerFollowers(followers=followers)
+
+
+async def get_seer_total_followers(session: AsyncSession, seer_id: int):
+    stmt = (
+        select(func.count()).select_from(FollowSeer).
+        where(FollowSeer.c.seer_id == seer_id)
     )
     return (await session.scalars(stmt)).one()
 

@@ -101,6 +101,7 @@ FollowSeer = Table(
         primary_key=True
     )
 )
+'''Contains `user_id` and `seer_id` columns'''
 
 
 '''

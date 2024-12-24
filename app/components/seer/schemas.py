@@ -61,3 +61,14 @@ class SeerCalendar(BaseModel):
     seer_id: int
     schedules: list[SeerScheduleOut]
     day_offs: list[dt.date]
+
+
+class Follower(BaseModel):
+    id: int
+    username: str
+    display_name: str
+    image: str
+
+
+class SeerFollowers(BaseModel):
+    followers: list[Follower]
