@@ -229,6 +229,12 @@ class Seer(Base):
     verified_at: Mapped[timestamp | None] = mapped_column(
         server_default=text("null")
     )
+    bank_name: Mapped[strText | None] = mapped_column(
+        server_default=text("null") # PromptPay
+    )
+    bank_no: Mapped[strText | None] = mapped_column(
+        server_default=text("null")
+    )
     properties: Mapped[dict[str, Any]] = mapped_column(
         JSONB, server_default=text("'{}'"), deferred=True
     )
@@ -312,6 +318,12 @@ class Withdrawal(Base):
         ForeignKey(Seer.id, ondelete="CASCADE")
     )
     amount: Mapped[coin]
+    bank_name: Mapped[strText | None] = mapped_column(
+        server_default=text("null")
+    )
+    bank_no: Mapped[strText | None] = mapped_column(
+        server_default=text("null")
+    )
     status: Mapped[strText] = mapped_column(server_default=text("'pending'"))
     date_created: Mapped[timestamp] = mapped_column(server_default=func.now())
 
@@ -545,17 +557,26 @@ class BidInfo(Base):
     # user: Mapped[User] = relationship(back_populates="bids")
 
 
+'''
+ ███████████                       
+ █   ███   █                       
+     ███     █████ █████ ████████  
+     ███      ███   ███   ███  ███ 
+     ███        █████     ███  ███ 
+     ███      ███   ███   ███  ███ 
+    █████    █████ █████ ████ █████
+'''
 class Transaction(Base):
     __tablename__ = "transaction"
 
     id: Mapped[intPK] = mapped_column(BigInteger, Identity())
-    sender_id: Mapped[userFK]
-    receiver_id: Mapped[userFK]
+    user_id: Mapped[userFK]
     activity_id: Mapped[int | None] = mapped_column(
         ForeignKey(Activity.id, ondelete="SET NULL")
     )
     amount: Mapped[coin]
     type: Mapped[strText]
+    status: Mapped[strText] # completed, hold, cancelled
     date_created: Mapped[timestamp] = mapped_column(server_default=func.now())
 
     # sender: Mapped[User | None] = relationship(
@@ -658,6 +679,16 @@ CREATE TABLE IF NOT EXISTS "notificationCounter" (
 funcs = DDL("""\
 CREATE OR REPLACE FUNCTION increment_composite() RETURNS TRIGGER AS $$
 BEGIN
+    IF NEW.id IS NOT NULL THEN
+		EXECUTE format(
+	        'UPDATE %%I SET counter=$1.id
+			WHERE %%I.id = $1.%%I AND counter < $1.id',
+			TG_ARGV[0], TG_ARGV[0], TG_ARGV[1]
+	    )
+		USING NEW;
+	    RETURN NEW;
+	END IF;
+
     EXECUTE format(
         'INSERT INTO %%I (id, counter) values ($1.%%I, 1)
         ON CONFLICT (id) DO UPDATE SET counter=%%I.counter+1
