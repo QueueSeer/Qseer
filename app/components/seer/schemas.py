@@ -27,6 +27,22 @@ class SeerOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class SeerGetMe(SeerOut):
+    bank_name: str | None = Field(examples=['PromptPay'])
+    bank_no: str | None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SeerUpdate(BaseModel):
+    experience: dt.date | None = None
+    description: str | None = None
+    primary_skill: str | None = None
+    is_available: bool | None = None
+    bank_name: str | None = Field(None, examples=['PromptPay'])
+    bank_no: str | None = None
+
+
 class SeerScheduleId(BaseModel):
     seer_id: int
     id: int

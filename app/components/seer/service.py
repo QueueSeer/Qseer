@@ -33,7 +33,47 @@ async def create_seer(session: AsyncSession, seer_reg: SeerIn, user_id: int) -> 
         raise InternalException(detail=detail)
 
 
-async def get_seer_info(seer_id: int, session: AsyncSession) -> SeerOut:
+async def get_self_seer(session: AsyncSession, seer_id: int) -> SeerGetMe:
+    stmt = (
+        select(
+            User.id,
+            User.username,
+            User.display_name,
+            User.first_name,
+            User.last_name,
+            User.image,
+            Seer.experience,
+            Seer.description,
+            Seer.primary_skill,
+            Seer.is_available,
+            Seer.verified_at,
+            Seer.bank_name,
+            Seer.bank_no
+        ).
+        join(User.seer).
+        where(User.id == seer_id, User.is_active == True)
+    )
+    seer = (await session.execute(stmt)).one()
+    return SeerGetMe.model_validate(seer)
+
+
+async def update_seer(
+    session: AsyncSession,
+    seer_id: int,
+    seer_update: SeerUpdate
+):
+    update_dict = seer_update.model_dump(exclude_unset=True)
+    stmt = (
+        update(Seer).
+        where(Seer.id == seer_id).
+        values(update_dict)
+    )
+    rowcount = (await session.execute(stmt)).rowcount
+    await session.commit()
+    return rowcount
+
+
+async def get_seer_info(session: AsyncSession, seer_id: int) -> SeerOut:
     stmt = (
         select(
             User.id,

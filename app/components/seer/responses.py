@@ -42,6 +42,41 @@ seer_confirm = {
     HTTP_403_FORBIDDEN: INVALID_TOKEN_EXAMPLE
 }
 
+get_seer_me = {
+    HTTP_200_OK: {
+        "model": SeerGetMe,
+        "description": "Seer information."
+    },
+    HTTP_404_NOT_FOUND: {
+        "content": {
+            "application/json": {
+                "example": {
+                    "message": "Seer not found."
+                }
+            },
+        },
+        "description": "Seer does not exist."
+    }
+}
+
+update_seer_me = {
+    HTTP_200_OK: {
+        "model": SeerUpdate,
+        "description": "Seer information updated."
+    },
+    HTTP_404_NOT_FOUND: {
+        "content": {
+            "application/json": {
+                "example": {
+                    "message": "Seer not found."
+                }
+            },
+        },
+        "description": "Seer does not exist."
+    }
+}
+
+
 create_seer_schedule = {
     HTTP_201_CREATED: {
         "model": SeerScheduleId,

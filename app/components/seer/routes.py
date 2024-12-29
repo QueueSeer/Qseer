@@ -78,7 +78,30 @@ async def seer_confirm(token: str, session: SessionDep):
     return Message("Confirmation successful.")
 
 
-# PATCH /me
+@router.get("/me", responses=res.get_seer_me)
+async def get_seer_me(payload: SeerJWTDep, session: SessionDep):
+    '''
+    ดูข้อมูลหมอดูตัวเอง
+    '''
+    try:
+        return await get_self_seer(session, payload.sub)
+    except NoResultFound:
+        raise NotFoundException("Seer not found.")
+
+
+@router.patch("/me", responses=res.update_seer_me)
+async def update_seer_me(
+    seer_update: SeerUpdate,
+    payload: SeerJWTDep,
+    session: SessionDep
+):
+    '''
+    แก้ไขข้อมูลหมอดูตัวเอง
+    '''
+    rowcount = await update_seer(session, payload.sub, seer_update)
+    if rowcount == 0:
+        raise NotFoundException("Seer not found.")
+    return seer_update
 
 
 @router.post(
@@ -156,7 +179,7 @@ async def seer_info(seer_id: int, session: SessionDep):
     ดูข้อมูลหมอดู
     '''
     try:
-        return await get_seer_info(seer_id, session)
+        return await get_seer_info(session, seer_id)
     except NoResultFound:
         raise NotFoundException("Seer not found.")
 
