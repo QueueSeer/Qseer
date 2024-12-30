@@ -6,7 +6,8 @@ from fastapi import (
     Request,
     status,
 )
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, select, update , insert, exists
+from sqlalchemy.exc import NoResultFound
 
 from app.core.config import settings
 from app.core.deps import UserJWTDep
@@ -19,10 +20,11 @@ from app.core.security import (
     create_jwt,
     decode_jwt,
 )
-from app.core.schemas import Message, UserId
+from app.core.schemas import Message, UserId, RowCount
 from app.database import SessionDep
-from app.database.models import User
-from app.email import send_verify_email
+from app.database.models import User, FollowSeer, Seer
+from app.emails import send_verify_email
+from ..seer.service import check_active_seer
 from . import responses as res
 from .schemas import (
     UserRegister,
@@ -157,14 +159,42 @@ async def get_self_field(
     return {field: result}
 
 
-# ติดตามหมอดู
-# POST /follow/{seer_id}
-@router.post("/follow/{seer_id}", responses=res.get_self_field)
-async def get_follow_seer():
-    pass
+@router.post("/me/follow/{seer_id}")
+async def post_follow_seer(seer_id : int,payload: UserJWTDep, session: SessionDep):
+    '''
+    ติดตามหมอดู
+    '''
+    user_id = payload.sub
+    try:
+        await check_active_seer(seer_id, session)
+    except NoResultFound:
+        raise NotFoundException("Seer not found.")
+    stmt = (
+        insert(FollowSeer).values(user_id = user_id,seer_id = seer_id).returning(FollowSeer.c.seer_id)
+    )
+    try:
+        result = (await session.execute(stmt)).scalar_one()
+    except NoResultFound:
+        raise NotFoundException("Seer not found.")
+    await session.commit()
+    return UserId(id=result)
 
-# เลิกติดตามหมอดู
-# DELETE /follow/{seer_id}
+
+@router.delete("/me/follow/{seer_id}")
+async def delete_follow_seer(seer_id : int,payload: UserJWTDep, session: SessionDep):
+    '''
+    เลิกติดตามหมอดู
+    '''
+    user_id = payload.sub
+
+    delete_stmt = (
+    delete(FollowSeer)
+    .where(FollowSeer.c.seer_id == seer_id)
+    .where(FollowSeer.c.user_id == user_id)
+    )
+    count = (await session.execute(delete_stmt)).rowcount
+    await session.commit()
+    return RowCount(count=count)
 
 
 @router.post("/delete")
