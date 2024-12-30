@@ -6,7 +6,7 @@ from fastapi import (
     Request,
     status,
 )
-from sqlalchemy import delete, select, update , insert, exists
+from sqlalchemy import delete, select, update, insert, exists
 from sqlalchemy.exc import NoResultFound
 
 from app.core.config import settings
@@ -35,6 +35,7 @@ from .schemas import (
 from .service import create_user
 
 router = APIRouter(prefix="/user", tags=["User"])
+
 
 @router.post(
     "/register",
@@ -112,7 +113,7 @@ async def get_self_info(payload: UserJWTDep, session: SessionDep):
     )).scalar_one_or_none()
     return UserOut.model_validate(user)
 
- 
+
 @router.patch("/me", responses=res.update_self_info)
 async def update_self_info(user: UserUpdate, payload: UserJWTDep, session: SessionDep):
     '''
@@ -160,7 +161,7 @@ async def get_self_field(
 
 
 @router.post("/me/follow/{seer_id}")
-async def post_follow_seer(seer_id : int,payload: UserJWTDep, session: SessionDep):
+async def post_follow_seer(seer_id: int, payload: UserJWTDep, session: SessionDep):
     '''
     ติดตามหมอดู
     '''
@@ -170,27 +171,30 @@ async def post_follow_seer(seer_id : int,payload: UserJWTDep, session: SessionDe
     except NoResultFound:
         raise NotFoundException("Seer not found.")
     stmt = (
-        insert(FollowSeer).values(user_id = user_id,seer_id = seer_id).returning(FollowSeer.c.seer_id)
+        insert(FollowSeer).
+        values(user_id=user_id, seer_id=seer_id).
+        returning(FollowSeer.c.seer_id)
     )
     try:
-        result = (await session.execute(stmt)).scalar_one()
+        result = (await session.scalars(stmt)).one()
     except NoResultFound:
-        raise NotFoundException("Seer not found.")
+        raise InternalException("Failed to follow seer.")
     await session.commit()
     return UserId(id=result)
 
 
 @router.delete("/me/follow/{seer_id}")
-async def delete_follow_seer(seer_id : int,payload: UserJWTDep, session: SessionDep):
+async def delete_follow_seer(seer_id: int, payload: UserJWTDep, session: SessionDep):
     '''
     เลิกติดตามหมอดู
     '''
     user_id = payload.sub
-
     delete_stmt = (
-    delete(FollowSeer)
-    .where(FollowSeer.c.seer_id == seer_id)
-    .where(FollowSeer.c.user_id == user_id)
+        delete(FollowSeer)
+        .where(
+            FollowSeer.c.seer_id == seer_id,
+            FollowSeer.c.user_id == user_id
+        )
     )
     count = (await session.execute(delete_stmt)).rowcount
     await session.commit()
