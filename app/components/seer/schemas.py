@@ -1,5 +1,5 @@
 import datetime as dt
-from typing import Annotated
+from typing import Annotated, Any
 from pydantic import BaseModel, ConfigDict, Field
 
 timeTZ = Annotated[dt.time, Field(..., examples=['15:20:30.500+07:00'])]
@@ -23,15 +23,14 @@ class SeerOut(BaseModel):
     primary_skill: str | None
     is_available: bool
     verified_at: dt.datetime | None
+    socials: dict[str, Any]
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class SeerGetMe(SeerOut):
     bank_name: str | None = Field(examples=['PromptPay'])
-    bank_no: str | None
-
-    model_config = ConfigDict(from_attributes=True)
+    bank_no: str | None = Field(examples=['0812345678'])
 
 
 class SeerUpdate(BaseModel):
@@ -40,7 +39,8 @@ class SeerUpdate(BaseModel):
     primary_skill: str | None = None
     is_available: bool | None = None
     bank_name: str | None = Field(None, examples=['PromptPay'])
-    bank_no: str | None = None
+    bank_no: str | None = Field(None, examples=['0818765432'])
+    socials: dict[str, Any] | None = None
 
 
 class SeerScheduleId(BaseModel):

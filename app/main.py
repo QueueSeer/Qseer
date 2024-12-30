@@ -44,3 +44,11 @@ async def root():
 )
 async def brew_coffee():
     return "I refuses to brew coffee because I am, permanently, a teapot."
+
+
+if __name__ == "__main__":
+    import asyncio
+    from fastapi_cli.cli import run
+    
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    run()

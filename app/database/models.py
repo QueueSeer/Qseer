@@ -235,6 +235,9 @@ class Seer(Base):
     bank_no: Mapped[strText | None] = mapped_column(
         server_default=text("null")
     )
+    socials: Mapped[dict[str, Any]] = mapped_column(
+        JSONB, server_default=text("'{}'")
+    )
     properties: Mapped[dict[str, Any]] = mapped_column(
         JSONB, server_default=text("'{}'"), deferred=True
     )
