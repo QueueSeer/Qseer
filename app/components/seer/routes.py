@@ -101,7 +101,7 @@ async def update_seer_me(
     rowcount = await update_seer(session, payload.sub, seer_update)
     if rowcount == 0:
         raise NotFoundException("Seer not found.")
-    return seer_update
+    return seer_update.model_dump(exclude_unset=True)
 
 
 @router.post(
@@ -123,6 +123,7 @@ async def create_seer_schedule(schedule: SeerScheduleIn, payload: SeerJWTDep, se
         returning(Schedule.id)
     )
     schedule_id = (await session.scalars(stmt)).one()
+    await session.commit()
     return SeerScheduleId(seer_id=payload.sub, id=schedule_id)
 
 
