@@ -101,6 +101,19 @@ async def verify_user(token: str, session: SessionDep):
     return Message("User verified.")
 
 
+# สร้าง token สำหรับการเปลี่ยนรหัสผ่าน
+# POST /forgot/password
+# TODO: รับ email เข้ามาแล้วหา user id จาก email
+# แล้วสร้าง JWT ที่มี claim ที่ชื่อว่า passwd มีค่าเป็น user id
+# และมีอายุ 30 นาที แล้วส่งไปที่ email ของ user นั้น
+# Return: Message("Password reset email sent.")
+
+
+# รับ token และ password ใน body แล้วเปลี่ยนรหัสผ่าน
+# PATCH /password
+# Return: Message("Password changed.")
+
+
 @router.get("/me", responses=res.get_self_info)
 async def get_self_info(payload: UserJWTDep, session: SessionDep):
     '''
@@ -137,6 +150,11 @@ async def update_self_info(user: UserUpdate, payload: UserJWTDep, session: Sessi
     if result is None:
         raise NotFoundException("User not found.")
     return result._asdict()
+
+
+# ใส่ username สำหรับผู้ใช้ที่ไม่มี username
+# PATCH /me/username
+# Return UserUsername
 
 
 @router.get("/me/{field}", responses=res.get_self_field)

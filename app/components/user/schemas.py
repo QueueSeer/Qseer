@@ -12,6 +12,10 @@ from app.core.security import hash_password
 from app.core.deps import EmailLower
 
 
+class UserUsername(BaseModel):
+    username: str = Field(examples=["sanfong"])
+
+
 class UserRegister(BaseModel):
     username: str = Field(min_length=3, examples=["sanfong"])
     display_name: str = Field(min_length=3, examples=["Sanfong"])
