@@ -23,7 +23,8 @@ class SeerOut(BaseModel):
     primary_skill: str | None
     is_available: bool
     verified_at: dt.datetime | None
-    socials: dict[str, Any]
+    socials_name: str | None
+    socials_link: str | None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -40,7 +41,8 @@ class SeerUpdate(BaseModel):
     is_available: bool | None = None
     bank_name: str | None = Field(None, examples=['PromptPay'])
     bank_no: str | None = Field(None, examples=['0818765432'])
-    socials: dict[str, Any] | None = None
+    socials_name: str | None = None
+    socials_link: str | None = None
 
 
 class SeerScheduleId(BaseModel):

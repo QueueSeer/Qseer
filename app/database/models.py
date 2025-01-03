@@ -1,5 +1,6 @@
 import datetime as dt
 import re
+from enum import Enum as pyEnum
 from decimal import Decimal
 from typing import Annotated, Any
 
@@ -31,10 +32,9 @@ from sqlalchemy.orm import (
     mapped_column,
     relationship,
 )
-from sqlalchemy.dialects.postgresql import SMALLINT, JSONB
+from sqlalchemy.dialects.postgresql import ARRAY, SMALLINT, JSONB
 from sqlalchemy.engine import Connection
 from sqlalchemy.sql import compiler
-
 
 # Overwrite FK_ON_DELETE to allow set null one of the composite key
 compiler.FK_ON_DELETE = re.compile(
@@ -235,8 +235,11 @@ class Seer(Base):
     bank_no: Mapped[strText | None] = mapped_column(
         server_default=text("null")
     )
-    socials: Mapped[dict[str, Any]] = mapped_column(
-        JSONB, server_default=text("'{}'")
+    socials_name: Mapped[strText | None] = mapped_column(
+        server_default=text("null")
+    )
+    socials_link: Mapped[strText | None] = mapped_column(
+        server_default=text("null")
     )
     properties: Mapped[dict[str, Any]] = mapped_column(
         JSONB, server_default=text("'{}'"), deferred=True
@@ -345,18 +348,32 @@ class Withdrawal(Base):
                                                       ███  ███         
                                                        ██████          
 '''
+class FPStatus(str, pyEnum):
+    draft = "draft"
+    published = "published"
+    hidden = "hidden"
+
+
+class FPChannel(str, pyEnum):
+    chat = "chat"
+    phone = "phone"
+    video = "video"
+
+
 class FortunePackage(Base):
     __tablename__ = "fortunePackage"
 
     seer_id: Mapped[intPK_seerFK]
     id: Mapped[intPK] = mapped_column(FetchedValue())
     name: Mapped[strText]
-    price: Mapped[coin]
-    duration: Mapped[dt.timedelta] = mapped_column(server_default=text("'0s'"))
+    price: Mapped[coin | None]
+    duration: Mapped[dt.timedelta | None] = mapped_column(
+        server_default=text("null")
+    )
     description: Mapped[strText] = mapped_column(server_default=text("''"))
     question_limit: Mapped[int] = mapped_column(server_default=text("0"))
-    status: Mapped[strText] = mapped_column(server_default=text("'draft'"))
-    foretell_channel: Mapped[strText] = mapped_column(
+    status: Mapped[FPStatus] = mapped_column(server_default=text("'draft'"))
+    foretell_channel: Mapped[FPChannel] = mapped_column(
         server_default=text("'chat'")
     )
     reading_type: Mapped[strText | None] = mapped_column(
@@ -417,13 +434,13 @@ class Appointment(Activity):
     start_time: Mapped[timestamp] = mapped_column(server_default=func.now())
     end_time: Mapped[timestamp] = mapped_column(server_default=func.now())
     status: Mapped[strText]
+    questions: Mapped[list[str]] = mapped_column(
+        ARRAY(Text()), server_default=text("'{}'")
+    )
     confirmation_code: Mapped[strText] = mapped_column(
         server_default=text("''")
     )
 
-    questions: Mapped[list["AppointmentQuestions"]] = relationship(
-        passive_deletes="all"
-    )
     # client: Mapped[User | None] = relationship(
     #     back_populates="appointments"
     # )
@@ -452,16 +469,6 @@ class Appointment(Activity):
             name="client_seer_not_null"
         )
     )
-
-
-class AppointmentQuestions(Base):
-    __tablename__ = "appointmentQuestions"
-
-    appointment_id: Mapped[intPK] = mapped_column(
-        ForeignKey(Appointment.id, ondelete="CASCADE")
-    )
-    id: Mapped[intPK] = mapped_column(FetchedValue())
-    question: Mapped[strText]
 
 
 class QuestionAnswer(Activity):
@@ -665,12 +672,6 @@ CREATE TABLE IF NOT EXISTS "qPackageCounter" (
     counter INTEGER DEFAULT 1 NOT NULL,
     FOREIGN KEY (id) REFERENCES "seer" (id) ON DELETE CASCADE
 );
-                     
-CREATE TABLE IF NOT EXISTS "appointQuestionCounter" (
-    id BIGINT PRIMARY KEY,
-    counter INTEGER DEFAULT 1 NOT NULL,
-    FOREIGN KEY (id) REFERENCES "appointment" (id) ON DELETE CASCADE
-);
 
 CREATE TABLE IF NOT EXISTS "notificationCounter" (
     id INTEGER PRIMARY KEY,
@@ -713,9 +714,6 @@ FOR EACH ROW EXECUTE PROCEDURE increment_composite('fPackageCounter', 'seer_id')
 
 CREATE OR REPLACE TRIGGER pk_increment BEFORE INSERT ON "questionPackage"
 FOR EACH ROW EXECUTE PROCEDURE increment_composite('qPackageCounter', 'seer_id');
-
-CREATE OR REPLACE TRIGGER pk_increment BEFORE INSERT ON "appointmentQuestions"
-FOR EACH ROW EXECUTE PROCEDURE increment_composite('appointQuestionCounter', 'appointment_id');
 
 CREATE OR REPLACE TRIGGER pk_increment BEFORE INSERT ON "notificationHistory"
 FOR EACH ROW EXECUTE PROCEDURE increment_composite('notificationCounter', 'user_id');
