@@ -1,3 +1,4 @@
+import re
 from datetime import timedelta
 from fastapi import (
     APIRouter,
@@ -6,15 +7,17 @@ from fastapi import (
     Request,
     status,
 )
+from psycopg.errors import UniqueViolation
 from sqlalchemy import delete, select, update, insert, exists
-from sqlalchemy.exc import NoResultFound
+from sqlalchemy.exc import NoResultFound ,IntegrityError
 
 from app.core.config import settings
 from app.core.deps import UserJWTDep
 from app.core.error import (
     BadRequestException,
     NotFoundException,
-    InternalException
+    InternalException,
+    IntegrityException,
 )
 from app.core.security import (
     create_jwt,
@@ -23,6 +26,7 @@ from app.core.security import (
 from app.core.schemas import Message, UserId, RowCount
 from app.database import SessionDep
 from app.database.models import User, FollowSeer, Seer
+from app.database.utils import parse_unique_violation
 from app.emails import send_verify_email
 from ..seer.service import check_active_seer
 from . import responses as res
@@ -31,6 +35,7 @@ from .schemas import (
     UserOut,
     UserSelectableField,
     UserUpdate,
+    UserUsername,
 )
 from .service import create_user
 
@@ -154,7 +159,31 @@ async def update_self_info(user: UserUpdate, payload: UserJWTDep, session: Sessi
 
 # ใส่ username สำหรับผู้ใช้ที่ไม่มี username
 # PATCH /me/username
+# if มี username แล้วให้ ไม่ต้องทำอะไร
 # Return UserUsername
+@router.patch("/me/username")
+async def set_user_username(body: UserUsername, payload: UserJWTDep, session: SessionDep):
+    user_id = payload.sub
+    pattern = r'^[a-zA-Z][a-zA-Z0-9_-]{3,254}$'
+    if not bool(re.match(pattern, body.username)) :
+        raise BadRequestException("Bad username")
+    stmt = (
+        update(User).
+        where(User.id == user_id, User.is_active == True,User.username == None).
+        values(username=body.username)
+    )
+    try :
+        count = (await session.execute(stmt)).rowcount
+        if count <= 0 :
+            raise BadRequestException("u alreay has username")
+        await session.commit()
+    except IntegrityError as e:
+        detail = {"type": "IntegrityError", "detail": "Unknown error."}
+        if isinstance(e.orig, UniqueViolation):
+            detail = parse_unique_violation(e.orig)
+        raise IntegrityException(detail=detail)
+    return body.username
+    
 
 
 @router.get("/me/{field}", responses=res.get_self_field)
