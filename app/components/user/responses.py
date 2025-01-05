@@ -1,4 +1,4 @@
-from app.core.schemas import UserId
+from app.core.schemas import RowCount, UserId
 from ..responses import *
 from .schemas import *
 
@@ -71,6 +71,64 @@ update_self_info = {
             }
         },
         "description": "The user is likely inactive or has been deleted."
+    },
+    **POSSIBLE_JWTCOOKIE_RESPONSE
+}
+
+set_user_username = {
+    HTTP_200_OK: {
+        "model": UserUsername,
+        "description": "Username set."
+    },
+    HTTP_400_BAD_REQUEST: {
+        "content": {
+            "application/json": {
+                "example": {"detail": "Username has already been set."}
+            }
+        },
+        "description": "Username has already been set."
+    },
+    HTTP_409_CONFLICT: {
+        "content": {
+            "application/json": {
+                "example": {
+                    "field": "username", "value": "sanfong", "type": "UniqueViolation"
+                }
+            },
+        },
+        "description": "Username already exists."
+    },
+    HTTP_422_UNPROCESSABLE_ENTITY: {
+        "content": {
+            "application/json": {
+                "example": {"detail": "Bad username"}
+            }
+        },
+        "description": "Bad username."
+    },
+    **POSSIBLE_JWTCOOKIE_RESPONSE
+}
+
+post_follow_seer = {
+    HTTP_200_OK: {
+        "model": UserId,
+        "description": "Followed seer."
+    },
+    HTTP_404_NOT_FOUND: {
+        "content": {
+            "application/json": {
+                "example": {"detail": "Seer not found."}
+            }
+        },
+        "description": "Seer not found."
+    },
+    **POSSIBLE_JWTCOOKIE_RESPONSE
+}
+
+delete_follow_seer = {
+    HTTP_200_OK: {
+        "model": RowCount,
+        "description": "The number of seers unfollowed."
     },
     **POSSIBLE_JWTCOOKIE_RESPONSE
 }

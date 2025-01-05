@@ -3,13 +3,12 @@ from datetime import timedelta
 from fastapi import (
     APIRouter,
     BackgroundTasks,
-    HTTPException,
     Request,
     status,
 )
 from psycopg.errors import UniqueViolation
-from sqlalchemy import delete, select, update, insert, exists
-from sqlalchemy.exc import NoResultFound ,IntegrityError
+from sqlalchemy import delete, select, update, insert
+from sqlalchemy.exc import NoResultFound, IntegrityError
 
 from app.core.config import settings
 from app.core.deps import UserJWTDep
@@ -18,6 +17,7 @@ from app.core.error import (
     NotFoundException,
     InternalException,
     IntegrityException,
+    UnprocessableEntityException,
 )
 from app.core.security import (
     create_jwt,
@@ -25,7 +25,7 @@ from app.core.security import (
 )
 from app.core.schemas import Message, UserId, RowCount
 from app.database import SessionDep
-from app.database.models import User, FollowSeer, Seer
+from app.database.models import User, FollowSeer
 from app.database.utils import parse_unique_violation
 from app.emails import send_verify_email
 from ..seer.service import check_active_seer
@@ -157,33 +157,37 @@ async def update_self_info(user: UserUpdate, payload: UserJWTDep, session: Sessi
     return result._asdict()
 
 
-# ใส่ username สำหรับผู้ใช้ที่ไม่มี username
-# PATCH /me/username
-# if มี username แล้วให้ ไม่ต้องทำอะไร
-# Return UserUsername
-@router.patch("/me/username")
+@router.patch("/me/username", responses=res.set_user_username)
 async def set_user_username(body: UserUsername, payload: UserJWTDep, session: SessionDep):
-    user_id = payload.sub
-    pattern = r'^[a-zA-Z][a-zA-Z0-9_-]{3,254}$'
-    if not bool(re.match(pattern, body.username)) :
-        raise BadRequestException("Bad username")
+    '''
+    ใส่ username สำหรับผู้ใช้ที่ไม่มี username
+
+    username ต้องขึ้นต้นด้วยตัวอักษร สามารถประกอบไปด้วยตัวอักษร ตัวเลข และ _ หรือ -
+    และมีความยาวระหว่าง 3-255 ตัวอักษร
+    '''
+    pattern = r'^[a-zA-Z][a-zA-Z0-9_-]{2,254}$'
+    if not re.match(pattern, body.username):
+        raise UnprocessableEntityException("Bad username")
     stmt = (
         update(User).
-        where(User.id == user_id, User.is_active == True,User.username == None).
+        where(
+            User.id == payload.sub,
+            User.is_active == True,
+            User.username == None
+        ).
         values(username=body.username)
     )
-    try :
+    try:
         count = (await session.execute(stmt)).rowcount
-        if count <= 0 :
-            raise BadRequestException("u alreay has username")
+        if count <= 0:
+            raise BadRequestException("Username has already been set.")
         await session.commit()
     except IntegrityError as e:
         detail = {"type": "IntegrityError", "detail": "Unknown error."}
         if isinstance(e.orig, UniqueViolation):
             detail = parse_unique_violation(e.orig)
         raise IntegrityException(detail=detail)
-    return body.username
-    
+    return body
 
 
 @router.get("/me/{field}", responses=res.get_self_field)
@@ -207,7 +211,7 @@ async def get_self_field(
     return {field: result}
 
 
-@router.post("/me/follow/{seer_id}")
+@router.post("/me/follow/{seer_id}", responses=res.post_follow_seer)
 async def post_follow_seer(seer_id: int, payload: UserJWTDep, session: SessionDep):
     '''
     ติดตามหมอดู
@@ -230,7 +234,7 @@ async def post_follow_seer(seer_id: int, payload: UserJWTDep, session: SessionDe
     return UserId(id=result)
 
 
-@router.delete("/me/follow/{seer_id}")
+@router.delete("/me/follow/{seer_id}", responses=res.delete_follow_seer)
 async def delete_follow_seer(seer_id: int, payload: UserJWTDep, session: SessionDep):
     '''
     เลิกติดตามหมอดู

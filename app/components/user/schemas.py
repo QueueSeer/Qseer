@@ -49,15 +49,15 @@ class UserRegister(BaseModel):
 
 class UserOut(BaseModel):
     id: int = Field(examples=[1])
-    username: str = Field(examples=["sanfong"])
+    username: str | None = Field(examples=["sanfong"])
     display_name: str = Field(examples=["Sanfong"])
     first_name: str = Field(examples=["Apinyawat"])
     last_name: str = Field(examples=["Khwanpruk"])
     email: EmailLower = Field(examples=["64010972@kmitl.ac.th"])
-    birthdate: dt.datetime = (
+    birthdate: dt.datetime | None = (
         Field(None, examples=["2002-10-03T19:00:00+07:00"])
     )
-    phone_number: str = Field(examples=["0812345678"])
+    phone_number: str | None = Field(examples=["0812345678"])
     coins: float
     image: str = Field(examples=["https://example.com/image.jpg"])
 
