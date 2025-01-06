@@ -2,11 +2,10 @@ from datetime import timedelta
 from fastapi import (
     APIRouter,
     BackgroundTasks,
-    HTTPException,
     Request,
     status,
 )
-from sqlalchemy import delete, insert, select, update
+from sqlalchemy import insert, update
 from sqlalchemy.exc import NoResultFound
 
 from app.core.config import settings
@@ -18,7 +17,7 @@ from app.core.security import (
 )
 from app.core.schemas import Message, UserId, RowCount
 from app.database import SessionDep
-from app.database.models import Seer, User, Schedule, DayOff
+from app.database.models import Seer, Schedule
 from app.emails.service import send_verify_email
 
 from ..user.service import get_user_email
@@ -128,7 +127,7 @@ async def create_seer_schedule(schedule: SeerScheduleIn, payload: SeerJWTDep, se
     )
     schedule_id = (await session.scalars(stmt)).one()
     await session.commit()
-    return SeerScheduleId(seer_id=payload.sub, id=schedule_id)
+    return SeerObjectId(seer_id=payload.sub, id=schedule_id)
 
 
 @router_me.patch("/schedule/{schedule_id}", responses=res.update_seer_schedule)

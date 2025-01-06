@@ -47,7 +47,8 @@ async def get_self_seer(session: AsyncSession, seer_id: int) -> SeerGetMe:
             Seer.primary_skill,
             Seer.is_available,
             Seer.verified_at,
-            Seer.socials,
+            Seer.socials_name,
+            Seer.socials_link,
             Seer.bank_name,
             Seer.bank_no
         ).
@@ -88,7 +89,8 @@ async def get_seer_info(session: AsyncSession, seer_id: int) -> SeerOut:
             Seer.primary_skill,
             Seer.is_available,
             Seer.verified_at,
-            Seer.socials
+            Seer.socials_name,
+            Seer.socials_link,
         ).
         join(User.seer).
         where(User.id == seer_id, User.is_active == True)

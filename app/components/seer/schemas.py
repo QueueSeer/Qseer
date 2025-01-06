@@ -2,8 +2,6 @@ import datetime as dt
 from typing import Annotated, Any
 from pydantic import BaseModel, ConfigDict, Field
 
-timeTZ = Annotated[dt.time, Field(..., examples=['15:20:30.500+07:00'])]
-
 
 class SeerIn(BaseModel):
     experience: dt.date | None = None
@@ -45,7 +43,7 @@ class SeerUpdate(BaseModel):
     socials_link: str | None = None
 
 
-class SeerScheduleId(BaseModel):
+class SeerObjectId(BaseModel):
     seer_id: int
     id: int
 
