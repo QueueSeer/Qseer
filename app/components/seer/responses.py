@@ -51,7 +51,7 @@ get_seer_me = {
         "content": {
             "application/json": {
                 "example": {
-                    "message": "Seer not found."
+                    "detail": "Seer not found."
                 }
             },
         },
@@ -68,7 +68,7 @@ update_seer_me = {
         "content": {
             "application/json": {
                 "example": {
-                    "message": "Seer not found."
+                    "detail": "Seer not found."
                 }
             },
         },
@@ -94,7 +94,7 @@ update_seer_schedule = {
         "content": {
             "application/json": {
                 "example": {
-                    "message": "Schedule not found."
+                    "detail": "Schedule not found."
                 }
             },
         },
@@ -140,7 +140,7 @@ seer_info = {
         "content": {
             "application/json": {
                 "example": {
-                    "message": "Seer not found."
+                    "detail": "Seer not found."
                 }
             },
         },
@@ -171,7 +171,7 @@ seer_calendar = {
         "content": {
             "application/json": {
                 "example": {
-                    "message": "Seer not found."
+                    "detail": "Seer not found."
                 }
             },
         },

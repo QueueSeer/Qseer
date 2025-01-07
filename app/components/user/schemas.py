@@ -15,12 +15,15 @@ from app.core.deps import EmailLower
 class UserUsername(BaseModel):
     username: str = Field(examples=["sanfong"])
 
+
 class UserEmail(BaseModel):
     email: EmailLower = Field(examples=["64010892@kmitl.ac.th"])
 
-class UserResetpassword(BaseModel):
+
+class UserResetPassword(BaseModel):
     token: str = Field(examples=["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"])
     password: str = Field(min_length=8, examples=["87654321"])
+
 
 class UserRegister(BaseModel):
     username: str = Field(min_length=3, examples=["sanfong"])

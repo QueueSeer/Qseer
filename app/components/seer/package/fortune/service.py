@@ -1,9 +1,8 @@
 from sqlalchemy import delete, func, insert, select, update
-from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.components.seer.schemas import SeerObjectId
-from app.database.models import FPStatus, FortunePackage
+from app.database.models import FPStatus, FortunePackage, Seer, User
 
 from .schemas import *
 
@@ -11,12 +10,50 @@ from .schemas import *
 async def get_seer_fpackage(
     session: AsyncSession,
     seer_id: int,
+    package_id: int
+) -> FortunePackage:
+    stmt = (
+        select(FortunePackage).
+        where(
+            FortunePackage.seer_id == seer_id,
+            FortunePackage.id == package_id
+        )
+    )
+    return (await session.scalars(stmt)).one()
+
+
+async def get_seer_fpackage_cards(
+    session: AsyncSession,
+    seer_id: int,
     status: FPStatus = None,
     last_id: int = 0,
     limit: int = 10
-) -> list[FortunePackage]:
+):
     stmt = (
-        select(FortunePackage).
+        select(
+            FortunePackage.id,
+            FortunePackage.name,
+            FortunePackage.price,
+            FortunePackage.duration,
+            FortunePackage.status,
+            FortunePackage.foretell_channel,
+            FortunePackage.reading_type,
+            FortunePackage.category,
+            FortunePackage.image,
+            FortunePackage.seer_id,
+            User.display_name.label("seer_display_name"),
+            User.image.label("seer_image"),
+            Seer.rating.label("seer_rating"),
+            Seer.review_count.label("seer_review_count")
+        ).
+        join(
+            User,
+            (User.id == FortunePackage.seer_id) & (User.is_active == True)
+        ).
+        join(
+            Seer,
+            (Seer.id == FortunePackage.seer_id) & (Seer.is_active == True)
+        ).
         where(
             FortunePackage.seer_id == seer_id,
             FortunePackage.id > last_id
@@ -26,7 +63,7 @@ async def get_seer_fpackage(
     )
     if status:
         stmt = stmt.where(FortunePackage.status == status)
-    return (await session.scalars(stmt)).all()
+    return PackageListOut(packages=(await session.execute(stmt)).all())
 
 
 async def create_draft_fpackage(
@@ -34,8 +71,9 @@ async def create_draft_fpackage(
     seer_id: int,
     package: FortunePackageDraft
 ) -> SeerObjectId:
-    package_data = package.model_dump()
-    package_data["required_data"] = package.required_number
+    package_data = package.model_dump(exclude_unset=True)
+    if "required_data" in package_data:
+        package_data["required_data"] = package.required_number
     package_data["seer_id"] = seer_id
     stmt = (
         insert(FortunePackage).
@@ -45,3 +83,26 @@ async def create_draft_fpackage(
     fpackage_id = (await session.scalars(stmt)).one()
     await session.commit()
     return SeerObjectId(seer_id=seer_id, id=fpackage_id)
+
+
+async def update_fpackage(
+    session: AsyncSession,
+    seer_id: int,
+    package_id: int,
+    package: FortunePackageDraft
+):
+    package_data = package.model_dump(exclude_unset=True)
+    if "required_data" in package_data:
+        package_data["required_data"] = package.required_number
+    stmt = (
+        update(FortunePackage).
+        where(
+            FortunePackage.seer_id == seer_id,
+            FortunePackage.id == package_id,
+            FortunePackage.status == FPStatus.draft
+        ).
+        values(package_data)
+    )
+    rowcount = (await session.execute(stmt)).rowcount
+    await session.commit()
+    return rowcount

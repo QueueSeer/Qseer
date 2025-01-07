@@ -15,6 +15,29 @@ class FPRequiredData(str, Enum):
     phone_number = 4
 
 
+class FPackageCardOut(BaseModel):
+    seer_id: int
+    seer_display_name: str
+    seer_image: str
+    seer_rating: float | None
+    seer_review_count: int
+    id: int
+    name: str
+    price: Decimal | None
+    duration: timedelta | None
+    status: FPStatus
+    foretell_channel: FPChannel
+    reading_type: str | None
+    category: str | None
+    image: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PackageListOut(BaseModel):
+    packages: list[FPackageCardOut]
+
+
 class FortunePackageOut(BaseModel):
     seer_id: int
     id: int
@@ -42,10 +65,6 @@ class FortunePackageOut(BaseModel):
                 if (flag := values & int(r.value))
             ]
         return values
-
-
-class PackageListOut(BaseModel):
-    packages: list[FortunePackageOut]
 
 
 class FortunePackageDraft(BaseModel):

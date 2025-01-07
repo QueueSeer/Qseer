@@ -23,6 +23,8 @@ class SeerOut(BaseModel):
     verified_at: dt.datetime | None
     socials_name: str | None
     socials_link: str | None
+    rating: float | None
+    review_count: int
 
     model_config = ConfigDict(from_attributes=True)
 

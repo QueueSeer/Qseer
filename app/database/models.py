@@ -32,7 +32,7 @@ from sqlalchemy.orm import (
     mapped_column,
     relationship,
 )
-from sqlalchemy.dialects.postgresql import ARRAY, SMALLINT, JSONB
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, REAL, SMALLINT
 from sqlalchemy.engine import Connection
 from sqlalchemy.sql import compiler
 
@@ -229,16 +229,20 @@ class Seer(Base):
     verified_at: Mapped[timestamp | None] = mapped_column(
         server_default=text("null")
     )
-    bank_name: Mapped[strText | None] = mapped_column(
-        server_default=text("null") # PromptPay
-    )
-    bank_no: Mapped[strText | None] = mapped_column(
-        server_default=text("null")
-    )
     socials_name: Mapped[strText | None] = mapped_column(
         server_default=text("null")
     )
     socials_link: Mapped[strText | None] = mapped_column(
+        server_default=text("null")
+    )
+    rating: Mapped[float | None] = mapped_column(
+        REAL(), server_default=text("null")
+    )
+    review_count: Mapped[int] = mapped_column(server_default=text("0"))
+    bank_name: Mapped[strText | None] = mapped_column(
+        server_default=text("null") # PromptPay
+    )
+    bank_no: Mapped[strText | None] = mapped_column(
         server_default=text("null")
     )
     properties: Mapped[dict[str, Any]] = mapped_column(
@@ -366,12 +370,14 @@ class FortunePackage(Base):
     seer_id: Mapped[intPK_seerFK]
     id: Mapped[intPK] = mapped_column(FetchedValue())
     name: Mapped[strText]
-    price: Mapped[coin | None]
+    price: Mapped[coin | None] = mapped_column(server_default=text("null"))
     duration: Mapped[dt.timedelta | None] = mapped_column(
         server_default=text("null")
     )
     description: Mapped[strText] = mapped_column(server_default=text("''"))
-    question_limit: Mapped[int] = mapped_column(server_default=text("0"))
+    question_limit: Mapped[int] = mapped_column(
+        SMALLINT, server_default=text("0")
+    )
     status: Mapped[FPStatus] = mapped_column(server_default=text("'draft'"))
     foretell_channel: Mapped[FPChannel] = mapped_column(
         server_default=text("'chat'")

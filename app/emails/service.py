@@ -36,6 +36,7 @@ async def send_verify_email(email, verify_url):
         logger.warning(f"Failed to send email to {email}")
         logger.warning(f"Url: {verify_url}")
 
+
 async def send_change_password(email, verify_url):
     myobj = {
         'url': verify_url,

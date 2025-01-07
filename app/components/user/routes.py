@@ -28,7 +28,7 @@ from app.core.schemas import Message, UserId, RowCount
 from app.database import SessionDep
 from app.database.models import User, FollowSeer
 from app.database.utils import parse_unique_violation
-from app.emails import send_verify_email ,send_change_password
+from app.emails import send_verify_email, send_change_password
 from ..seer.service import check_active_seer
 from . import responses as res
 from .schemas import (
@@ -38,7 +38,7 @@ from .schemas import (
     UserUpdate,
     UserUsername,
     UserEmail,
-    UserResetpassword,
+    UserResetPassword,
 )
 from .service import create_user
 
@@ -110,36 +110,38 @@ async def verify_user(token: str, session: SessionDep):
 
 
 @router.post("/change/password")
-async def change_password(    
+async def change_password(
     user_email: UserEmail,
     session: SessionDep,
     bg_tasks: BackgroundTasks
 ):
-    user_id = (await session.execute(
-        select(User.id).
-        where(User.email == user_email.email, User.is_active == True)
-    )).scalar_one_or_none()
-    if user_id is None:
+    try:
+        user_id = (await session.scalars(
+            select(User.id).
+            where(User.email == user_email.email, User.is_active == True)
+        )).one()
+    except NoResultFound:
         return Message("Password reset email sent.")
+
     token = create_jwt({"passwd": user_id}, timedelta(minutes=30))
     if not settings.DEVELOPMENT:
         print("----------------Token------------------")
         print(token)
-        print("---------------------------------------") 
+        print("---------------------------------------")
         # bg_tasks.add_task(
         # send_change_password,
         # user_email.email,
         # request.url_for("verify_user", token=token)._url
-        # )   
+        # )
     else:
         print("----------------Token------------------")
         print(token)
-        print("---------------------------------------") 
+        print("---------------------------------------")
     return Message("Password reset email sent.")
 
 
 @router.patch("/password")
-async def forgot_password(body : UserResetpassword,session: SessionDep):
+async def forgot_password(body: UserResetPassword, session: SessionDep):
     payload = decode_jwt(body.token, require=["exp", "passwd"])
     user_id = payload["passwd"]
     stmt = (
@@ -148,11 +150,11 @@ async def forgot_password(body : UserResetpassword,session: SessionDep):
         values(password=hash_password(body.password)).
         returning(User.id)
     )
-    user_id = (await session.execute(stmt)).scalar_one_or_none()
+    try:
+        user_id = (await session.scalars(stmt)).one()
+    except NoResultFound:
+        raise NotFoundException("User not found.")
     await session.commit()
-    if user_id is None:
-        raise NotFoundException("🎉User Not Found🎉")
-
     return Message("Password changed.")
 
 

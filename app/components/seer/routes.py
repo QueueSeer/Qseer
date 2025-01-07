@@ -22,7 +22,7 @@ from app.emails.service import send_verify_email
 
 from ..user.service import get_user_email
 from . import responses as res
-from .package import me_api, id_api
+from .package import pkg_api, me_api, id_api
 from .schemas import *
 from .service import *
 
@@ -81,7 +81,7 @@ async def seer_confirm(token: str, session: SessionDep):
 router_me = APIRouter(prefix="/me", tags=["Seer Me"])
 
 
-@router_me.get("/", responses=res.get_seer_me)
+@router_me.get("", responses=res.get_seer_me)
 async def get_seer_me(payload: SeerJWTDep, session: SessionDep):
     '''
     ดูข้อมูลหมอดูตัวเอง
@@ -92,7 +92,7 @@ async def get_seer_me(payload: SeerJWTDep, session: SessionDep):
         raise NotFoundException("Seer not found.")
 
 
-@router_me.patch("/", responses=res.update_seer_me)
+@router_me.patch("", responses=res.update_seer_me)
 async def update_seer_me(
     seer_update: SeerUpdate,
     payload: SeerJWTDep,
@@ -180,7 +180,7 @@ async def delete_seer_dayoff(day_off: dt.date, payload: SeerJWTDep, session: Ses
 router_id = APIRouter(prefix="/{seer_id}", tags=["Seer Id"])
 
 
-@router_id.get("/", responses=res.seer_info)
+@router_id.get("", responses=res.seer_info)
 async def seer_info(seer_id: int, session: SessionDep):
     '''
     ดูข้อมูลหมอดู
@@ -233,5 +233,6 @@ async def seer_calendar(seer_id: int, session: SessionDep):
 
 router_me.include_router(me_api)
 router_id.include_router(id_api)
+router.include_router(pkg_api)
 router.include_router(router_me)
 router.include_router(router_id)
