@@ -4,7 +4,11 @@ from sqlalchemy.exc import NoResultFound
 
 from app.components.seer.service import check_active_seer
 from app.core.deps import SeerJWTDep
-from app.core.error import BadRequestException, NotFoundException
+from app.core.error import (
+    BadRequestException,
+    IntegrityException,
+    NotFoundException
+)
 from app.database import SessionDep
 from app.database.models import FPStatus
 
@@ -78,10 +82,56 @@ async def edit_draft_fortune_package(
     package_id: int,
     fortune: FortunePackageDraft
 ):
-    count = await update_fpackage(session, payload.sub, package_id, fortune)
+    '''
+    แก้ไขแพ็คเกจดูดวงที่มีสถานะเป็น draft
+    '''
+    count = await update_draft_fpackage(
+        session, payload.sub, package_id, fortune
+    )
     if count == 0:
         raise NotFoundException("Fortune package not found.")
     return fortune.model_dump(exclude_unset=True)
+
+
+@router_me.patch("/{package_id}/status", responses=res.fpackage_status)
+async def change_fortune_package_status(
+    payload: SeerJWTDep,
+    session: SessionDep,
+    package_id: int,
+    status: FPStatusChange
+):
+    '''
+    เปลี่ยนสถานะแพ็คเกจดูดวงเป็น `published` หรือ `hidden`
+    '''
+    if status.status == FPStatus.draft:
+        raise BadRequestException("Cannot change status to draft.")
+    stmt = (
+        select(FortunePackage.price, FortunePackage.duration).
+        where(
+            FortunePackage.seer_id == payload.sub,
+            FortunePackage.id == package_id
+        )
+    )
+    try:
+        row = (await session.execute(stmt)).one()
+    except NoResultFound:
+        raise NotFoundException("Fortune package not found.")
+    if row.price is None:
+        raise IntegrityException({
+            "detail": "Price is required.",
+            "field": "price"
+        })
+    if row.duration is None:
+        raise IntegrityException({
+            "detail": "Duration is required.",
+            "field": "duration"
+        })
+    count = await change_fpackage_status(
+        session, payload.sub, package_id, status.status
+    )
+    if count == 0:
+        raise NotFoundException("Fortune package not found.")
+    return status
 
 
 # /seer/{seer_id}/package/fortune

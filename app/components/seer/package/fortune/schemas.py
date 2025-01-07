@@ -94,3 +94,7 @@ class FortunePackageDraft(BaseModel):
         for r in self.required_data:
             num |= int(r.value)
         return num
+
+
+class FPStatusChange(BaseModel):
+    status: FPStatus = Field(examples=[FPStatus.published])

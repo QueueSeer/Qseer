@@ -85,7 +85,7 @@ async def create_draft_fpackage(
     return SeerObjectId(seer_id=seer_id, id=fpackage_id)
 
 
-async def update_fpackage(
+async def update_draft_fpackage(
     session: AsyncSession,
     seer_id: int,
     package_id: int,
@@ -102,6 +102,25 @@ async def update_fpackage(
             FortunePackage.status == FPStatus.draft
         ).
         values(package_data)
+    )
+    rowcount = (await session.execute(stmt)).rowcount
+    await session.commit()
+    return rowcount
+
+
+async def change_fpackage_status(
+    session: AsyncSession,
+    seer_id: int,
+    package_id: int,
+    status: FPStatus
+):
+    stmt = (
+        update(FortunePackage).
+        where(
+            FortunePackage.seer_id == seer_id,
+            FortunePackage.id == package_id
+        ).
+        values(status=status)
     )
     rowcount = (await session.execute(stmt)).rowcount
     await session.commit()

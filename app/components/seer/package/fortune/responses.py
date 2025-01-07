@@ -55,6 +55,45 @@ edit_draft_fpackage = {
     **POSSIBLE_JWTCOOKIE_RESPONSE
 }
 
+fpackage_status = {
+    HTTP_200_OK: {
+        "model": FPStatusChange,
+        "description": "Changed fortune package status successfully."
+    },
+    HTTP_400_BAD_REQUEST: {
+        "content": {
+            "application/json": {
+                "example": {
+                    "detail": "Cannot change status to draft."
+                }
+            },
+        },
+        "description": "Cannot change status to draft."
+    },
+    HTTP_404_NOT_FOUND: {
+        "content": {
+            "application/json": {
+                "example": {
+                    "detail": "Fortune package not found."
+                }
+            },
+        },
+        "description": "Fortune package not found."
+    },
+    HTTP_409_CONFLICT: {
+        "content": {
+            "application/json": {
+                "example": {
+                    "detail": "Field is required.",
+                    "field": "field"
+                }
+            },
+        },
+        "description": "Missing required field."
+    },
+    **POSSIBLE_JWTCOOKIE_RESPONSE
+}
+
 get_seer_fpackage_cards = {
     HTTP_200_OK: {
         "model": PackageListOut,
