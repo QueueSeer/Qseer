@@ -22,12 +22,13 @@ from app.core.error import (
 from app.core.security import (
     create_jwt,
     decode_jwt,
+    hash_password,
 )
 from app.core.schemas import Message, UserId, RowCount
 from app.database import SessionDep
 from app.database.models import User, FollowSeer
 from app.database.utils import parse_unique_violation
-from app.emails import send_verify_email
+from app.emails import send_verify_email ,send_change_password
 from ..seer.service import check_active_seer
 from . import responses as res
 from .schemas import (
@@ -36,6 +37,8 @@ from .schemas import (
     UserSelectableField,
     UserUpdate,
     UserUsername,
+    UserEmail,
+    UserResetpassword,
 )
 from .service import create_user
 
@@ -106,17 +109,51 @@ async def verify_user(token: str, session: SessionDep):
     return Message("User verified.")
 
 
-# สร้าง token สำหรับการเปลี่ยนรหัสผ่าน
-# POST /forgot/password
-# TODO: รับ email เข้ามาแล้วหา user id จาก email
-# แล้วสร้าง JWT ที่มี claim ที่ชื่อว่า passwd มีค่าเป็น user id
-# และมีอายุ 30 นาที แล้วส่งไปที่ email ของ user นั้น
-# Return: Message("Password reset email sent.")
+@router.post("/change/password")
+async def change_password(    
+    user_email: UserEmail,
+    session: SessionDep,
+    bg_tasks: BackgroundTasks
+):
+    user_id = (await session.execute(
+        select(User.id).
+        where(User.email == user_email.email, User.is_active == True)
+    )).scalar_one_or_none()
+    if user_id is None:
+        return Message("Password reset email sent.")
+    token = create_jwt({"passwd": user_id}, timedelta(minutes=30))
+    if not settings.DEVELOPMENT:
+        print("----------------Token------------------")
+        print(token)
+        print("---------------------------------------") 
+        # bg_tasks.add_task(
+        # send_change_password,
+        # user_email.email,
+        # request.url_for("verify_user", token=token)._url
+        # )   
+    else:
+        print("----------------Token------------------")
+        print(token)
+        print("---------------------------------------") 
+    return Message("Password reset email sent.")
 
 
-# รับ token และ password ใน body แล้วเปลี่ยนรหัสผ่าน
-# PATCH /password
-# Return: Message("Password changed.")
+@router.patch("/password")
+async def forgot_password(body : UserResetpassword,session: SessionDep):
+    payload = decode_jwt(body.token, require=["exp", "passwd"])
+    user_id = payload["passwd"]
+    stmt = (
+        update(User).
+        where(User.id == user_id, User.is_active == True).
+        values(password=hash_password(body.password)).
+        returning(User.id)
+    )
+    user_id = (await session.execute(stmt)).scalar_one_or_none()
+    await session.commit()
+    if user_id is None:
+        raise NotFoundException("🎉User Not Found🎉")
+
+    return Message("Password changed.")
 
 
 @router.get("/me", responses=res.get_self_info)

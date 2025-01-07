@@ -1,1 +1,1 @@
-from .service import send_verify_email
+from .service import send_verify_email ,send_change_password
