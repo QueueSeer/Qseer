@@ -1,8 +1,7 @@
 from fastapi import APIRouter
-from sqlalchemy import delete, insert, select, update
+from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound
 
-from app.components.seer.service import check_active_seer
 from app.core.deps import SeerJWTDep
 from app.core.error import (
     BadRequestException,
@@ -19,6 +18,12 @@ from .service import *
 # /seer/package/fortune
 router = APIRouter(prefix="/fortune")
 
+
+# GET /search
+# Return: PackageListOut
+# TODO: Wait for comfirmation on the filter parameters
+
+
 # /seer/me/package/fortune
 router_me = APIRouter(prefix="/fortune")
 
@@ -34,7 +39,7 @@ async def get_self_fpackage_cards(
     '''
     ดูรายการแพ็คเกจดูดวงของตัวเอง
     '''
-    return await get_seer_fpackage_cards(
+    return await get_fpackage_cards(
         session, payload.sub,
         status, last_id, limit
     )
@@ -148,12 +153,7 @@ async def get_seer_fortune_package_cards(
     '''
     ดูรายการแพ็คเกจดูดวงของหมอดู
     '''
-    try:
-        await check_active_seer(seer_id, session)
-    except NoResultFound:
-        raise NotFoundException("Seer not found.")
-
-    return await get_seer_fpackage_cards(
+    return await get_fpackage_cards(
         session, seer_id,
         FPStatus.published, last_id, limit
     )

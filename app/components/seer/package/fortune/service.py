@@ -22,7 +22,7 @@ async def get_seer_fpackage(
     return (await session.scalars(stmt)).one()
 
 
-async def get_seer_fpackage_cards(
+async def get_fpackage_cards(
     session: AsyncSession,
     seer_id: int,
     status: FPStatus = None,
