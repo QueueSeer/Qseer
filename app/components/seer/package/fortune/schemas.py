@@ -31,7 +31,7 @@ class FPackageCardOut(BaseModel):
     category: str | None
     image: str
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, ser_json_timedelta='float')
 
 
 class PackageListOut(BaseModel):
@@ -53,7 +53,7 @@ class FortunePackageOut(BaseModel):
     required_data: list[FPRequiredData]
     image: str
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, ser_json_timedelta='float')
 
     @field_validator("required_data", mode="before")
     @classmethod
@@ -79,6 +79,8 @@ class FortunePackageDraft(BaseModel):
     required_data: list[FPRequiredData] = Field(default_factory=list)
     image: str = ''
 
+    model_config = ConfigDict(ser_json_timedelta='float')
+
     @field_validator("required_data", mode="before")
     @classmethod
     def check_length(cls, values):
@@ -94,6 +96,10 @@ class FortunePackageDraft(BaseModel):
         for r in self.required_data:
             num |= int(r.value)
         return num
+
+
+class FortunePackageEdit(FortunePackageDraft):
+    name: str = Field(None, min_length=1, examples=["Fate Peeker"])
 
 
 class FPStatusChange(BaseModel):

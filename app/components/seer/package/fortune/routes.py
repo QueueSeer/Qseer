@@ -80,7 +80,7 @@ async def edit_draft_fortune_package(
     payload: SeerJWTDep,
     session: SessionDep,
     package_id: int,
-    fortune: FortunePackageDraft
+    fortune: FortunePackageEdit
 ):
     '''
     แก้ไขแพ็คเกจดูดวงที่มีสถานะเป็น draft
@@ -90,7 +90,7 @@ async def edit_draft_fortune_package(
     )
     if count == 0:
         raise NotFoundException("Fortune package not found.")
-    return fortune.model_dump(exclude_unset=True)
+    return fortune.model_dump(mode='json', exclude_unset=True)
 
 
 @router_me.patch("/{package_id}/status", responses=res.fpackage_status)
@@ -138,8 +138,8 @@ async def change_fortune_package_status(
 router_id = APIRouter(prefix="/fortune")
 
 
-@router_id.get("", responses=res.get_seer_fpackage_cards)
-async def get_seer_fpackage_cards(
+@router_id.get("", responses=res.get_seer_fortune_package_cards)
+async def get_seer_fortune_package_cards(
     session: SessionDep,
     seer_id: int,
     last_id: int = 0,

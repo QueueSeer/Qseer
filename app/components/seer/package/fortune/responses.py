@@ -94,7 +94,7 @@ fpackage_status = {
     **POSSIBLE_JWTCOOKIE_RESPONSE
 }
 
-get_seer_fpackage_cards = {
+get_seer_fortune_package_cards = {
     HTTP_200_OK: {
         "model": PackageListOut,
         "description": "List of fortune packages."
