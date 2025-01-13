@@ -79,8 +79,8 @@ update_seer_me = {
 
 create_seer_schedule = {
     HTTP_201_CREATED: {
-        "model": SeerObjectId,
-        "description": "Schedule created."
+        "model": SeerObjectIdList,
+        "description": "Schedules created."
     },
     **POSSIBLE_JWTCOOKIE_RESPONSE
 }

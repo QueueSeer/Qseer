@@ -112,22 +112,29 @@ async def update_seer_me(
     status_code=status.HTTP_201_CREATED,
     responses=res.create_seer_schedule
 )
-async def create_seer_schedule(schedule: SeerScheduleIn, payload: SeerJWTDep, session: SessionDep):
+async def create_seer_schedule(
+    schedules: list[SeerScheduleIn],
+    payload: SeerJWTDep,
+    session: SessionDep
+):
     '''
     สร้างตารางเวลาหมอดู
 
     day ภายใน schedules คือเลข 0-6 แทนวันจันทร์-อาทิตย์
-    ''' 
-    schedule_values = schedule.model_dump()
-    schedule_values["seer_id"] = payload.sub
-    stmt = (
-        insert(Schedule).
-        values(schedule_values).
-        returning(Schedule.id)
-    )
-    schedule_id = (await session.scalars(stmt)).one()
+    '''
+    id_list = [
+        SeerObjectId(seer_id=payload.sub, id=sch_id)
+        for sch_id in (await session.scalars(
+            insert(Schedule).
+            values([
+                sch.model_dump() | {"seer_id": payload.sub}
+                for sch in schedules
+            ]).
+            returning(Schedule.id)
+        )).all()
+    ]
     await session.commit()
-    return SeerObjectId(seer_id=payload.sub, id=schedule_id)
+    return SeerObjectIdList.model_construct(ids=id_list)
 
 
 @router_me.patch("/schedule/{schedule_id}", responses=res.update_seer_schedule)

@@ -50,6 +50,10 @@ class SeerObjectId(BaseModel):
     id: int
 
 
+class SeerObjectIdList(BaseModel):
+    ids: list[SeerObjectId]
+
+
 class SeerScheduleIn(BaseModel):
     start_time: dt.time
     end_time: dt.time
