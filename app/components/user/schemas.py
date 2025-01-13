@@ -1,4 +1,5 @@
 import datetime as dt
+import re
 from enum import Enum
 from typing import Any
 from pydantic import (
@@ -49,6 +50,14 @@ class UserRegister(BaseModel):
             ]
         )
     )
+
+    @field_validator("username")
+    @classmethod
+    def check_username(cls, v: str) -> str:
+        pattern = r'^[a-zA-Z][a-zA-Z0-9_-]{2,254}$'
+        if not re.match(pattern, v):
+            raise ValueError("Invalid username")
+        return v
 
     @field_validator("password")
     @classmethod
