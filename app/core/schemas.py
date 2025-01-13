@@ -20,9 +20,9 @@ class Message(BaseModel):
 
 
 class TokenPayload(BaseModel):
-    exp: Any
+    exp: Any = Field(examples=[1800000000])
     sub: int
-    roles: list[str]
+    roles: list[str] = Field(examples=[["seer"]])
 
 
 class UserId(BaseModel):

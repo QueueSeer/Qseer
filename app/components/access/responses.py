@@ -1,10 +1,10 @@
-from app.core.schemas import UserId
+from app.core.schemas import TokenPayload
 from ..responses import *
 from .schemas import *
 
 google_signin = {
     HTTP_200_OK: {
-        "model": UserId,
+        "model": TokenPayload,
         "description": "User signed in."
     },
     HTTP_400_BAD_REQUEST: {
@@ -35,7 +35,7 @@ google_signin = {
 
 login = {
     HTTP_200_OK: {
-        "model": UserId,
+        "model": TokenPayload,
         "description": "User logged in."
     },
     HTTP_404_NOT_FOUND: {
@@ -62,7 +62,7 @@ logout = {
 
 refresh = {
     HTTP_200_OK: {
-        "model": UserId,
+        "model": TokenPayload,
         "description": "User refreshed."
     },
     HTTP_404_NOT_FOUND: {

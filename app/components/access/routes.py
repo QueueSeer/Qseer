@@ -8,7 +8,6 @@ from fastapi import (
     Response,
     Form,
 )
-from pydantic import Field
 from sqlalchemy import select
 
 from app.core.config import settings
@@ -20,7 +19,7 @@ from app.core.security import (
     create_jwt,
     verify_password
 )
-from app.core.schemas import Message, UserId
+from app.core.schemas import Message
 from app.database import SessionDep
 from app.database.models import User, Seer, Admin
 from ..user.service import create_user
@@ -78,8 +77,7 @@ async def google_signin(
         if not row.is_active:
             raise HTTPException(404, detail="User not found.")
 
-    set_credential_cookie(user_id, seer_id, admin_id, response)
-    return UserId(id=user_id)
+    return set_credential_cookie(user_id, seer_id, admin_id, response)
 
 
 @router.post("/login", responses=res.login)
@@ -104,8 +102,7 @@ async def login(user: UserLogin, session: SessionDep, response: Response):
     hashed_password = row.password if row is not None else None
     if not verify_password(user.password, hashed_password):
         raise HTTPException(status_code=404, detail="User not found.")
-    set_credential_cookie(row.id, row.seer_id, row.admin_id, response)
-    return UserId(id=row.id)
+    return set_credential_cookie(row.id, row.seer_id, row.admin_id, response)
 
 
 @router.delete("/logout", responses=res.logout)
@@ -138,14 +135,13 @@ async def refresh(payload: UserJWTDep, session: SessionDep, response: Response):
     if row is None:
         response.delete_cookie(COOKIE_NAME)
         raise HTTPException(status_code=404, detail="User not found.")
-    set_credential_cookie(row.id, row.seer_id, row.admin_id, response)
-    return UserId(id=row.id)
+    return set_credential_cookie(row.id, row.seer_id, row.admin_id, response)
 
 
-@router.get("/check_cookie")
-async def check_cookie(payload: UserJWTDep):
+@router.get("/read_token")
+async def read_token(payload: UserJWTDep):
     '''
-    For testing purpose only.
+    อ่านข้อมูลจาก JWT
     '''
     return payload
 
@@ -164,3 +160,4 @@ def set_credential_cookie(user_id, seer_id, admin_id, response: Response):
         COOKIE_NAME, token, max_age=604800, path="/",
         secure=True, httponly=True, samesite="strict"
     )
+    return token
