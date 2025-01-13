@@ -8,6 +8,7 @@ from app.core.error import (
     IntegrityException,
     NotFoundException
 )
+from app.core.schemas import RowCount
 from app.database import SessionDep
 from app.database.models import FPStatus
 
@@ -137,6 +138,19 @@ async def change_fortune_package_status(
     if count == 0:
         raise NotFoundException("Fortune package not found.")
     return status
+
+
+@router_me.delete("/{package_id}", responses=res.delete_self_fortune_package)
+async def delete_self_fortune_package(
+    payload: SeerJWTDep,
+    session: SessionDep,
+    package_id: int
+):
+    '''
+    ลบแพ็คเกจดูดวงของตัวเอง
+    '''
+    count = await delete_fpackage(session, payload.sub, package_id)
+    return RowCount(count=count)
 
 
 # /seer/{seer_id}/package/fortune

@@ -125,3 +125,20 @@ async def change_fpackage_status(
     rowcount = (await session.execute(stmt)).rowcount
     await session.commit()
     return rowcount
+
+
+async def delete_fpackage(
+    session: AsyncSession,
+    seer_id: int,
+    package_id: int
+):
+    stmt = (
+        delete(FortunePackage).
+        where(
+            FortunePackage.seer_id == seer_id,
+            FortunePackage.id == package_id
+        )
+    )
+    rowcount = (await session.execute(stmt)).rowcount
+    await session.commit()
+    return rowcount

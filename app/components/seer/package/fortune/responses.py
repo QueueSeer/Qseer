@@ -1,5 +1,6 @@
 from app.components.seer.schemas import SeerObjectId
 from app.components.responses import *
+from app.core.schemas import RowCount
 from .schemas import *
 
 get_self_fpackage_cards = {
@@ -89,6 +90,14 @@ fpackage_status = {
             },
         },
         "description": "Missing required field."
+    },
+    **POSSIBLE_JWTCOOKIE_RESPONSE
+}
+
+delete_self_fortune_package = {
+    HTTP_200_OK: {
+        "model": RowCount,
+        "description": "The number of fortune package deleted."
     },
     **POSSIBLE_JWTCOOKIE_RESPONSE
 }
