@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Annotated
 from google.oauth2 import id_token
 from google.auth.transport import requests
@@ -17,6 +17,7 @@ from app.core.deps import (
 )
 from app.core.security import (
     create_jwt,
+    decode_jwt,
     verify_password
 )
 from app.core.schemas import Message
@@ -152,12 +153,12 @@ def set_credential_cookie(user_id, seer_id, admin_id, response: Response):
         roles.append("seer")
     if admin_id is not None:
         roles.append("admin")
-    token = create_jwt(
-        {"sub": str(user_id), "roles": roles},
-        timedelta(days=7)
-    )
+    expired = datetime.now(timezone.utc) + timedelta(days=7)
+    expired = int(expired.timestamp())
+    payload = {"exp": expired, "sub": user_id, "roles": roles}
+    token = create_jwt(payload)
     response.set_cookie(
         COOKIE_NAME, token, max_age=604800, path="/",
         secure=True, httponly=True, samesite="strict"
     )
-    return token
+    return payload
