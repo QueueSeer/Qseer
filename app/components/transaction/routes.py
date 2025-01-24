@@ -19,7 +19,7 @@ async def get_qr_promptpay(_: UserJWTDep, amount: int = ''):
     return "https://promptpay.io/0812345678/" + str(amount)
 
 
-@router.post("/confirm_topup", response=res.confirm_topup)
+@router.post("/confirm_topup", responses=res.confirm_topup)
 async def confirm_topup(
     payload: UserJWTDep,
     session: SessionDep,
