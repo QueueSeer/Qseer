@@ -582,6 +582,23 @@ class BidInfo(Base):
      ███      ███   ███   ███  ███ 
     █████    █████ █████ ████ █████
 '''
+class TxnType(str, pyEnum):
+    topup = "topup"
+    withdraw = "withdraw"
+    appointment = "appointment"
+    question = "question"
+    auction_bid = "auction_bid"
+    auction_earn = "auction_earn"
+    transfer = "transfer"
+    other = "other"
+
+
+class TxnStatus(str, pyEnum):
+    completed = "completed"
+    hold = "hold"
+    cancelled = "cancelled"
+
+
 class Transaction(Base):
     __tablename__ = "transaction"
 
@@ -591,8 +608,8 @@ class Transaction(Base):
         ForeignKey(Activity.id, ondelete="SET NULL")
     )
     amount: Mapped[coin]
-    type: Mapped[strText]
-    status: Mapped[strText] # completed, hold, cancelled
+    type: Mapped[TxnType]
+    status: Mapped[TxnStatus]
     date_created: Mapped[timestamp] = mapped_column(server_default=func.now())
 
     # sender: Mapped[User | None] = relationship(
