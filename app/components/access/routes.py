@@ -155,7 +155,7 @@ def set_credential_cookie(user_id, seer_id, admin_id, response: Response):
         roles.append("admin")
     expired = datetime.now(timezone.utc) + timedelta(days=7)
     expired = int(expired.timestamp())
-    payload = {"exp": expired, "sub": user_id, "roles": roles}
+    payload = {"exp": expired, "sub": str(user_id), "roles": roles}
     token = create_jwt(payload)
     response.set_cookie(
         COOKIE_NAME, token, max_age=604800, path="/",
