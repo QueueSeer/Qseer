@@ -5,7 +5,7 @@ from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.error import exc_handlers
-from app.components import get_api_router
+from app.components import get_api_router, tags_metadata
 from app import (
     database,
     objectStorage
@@ -32,7 +32,11 @@ origins = [
     "http://127.0.0.1:5500",
 ]
 
-app = FastAPI(lifespan=lifespan, exception_handlers=exc_handlers)
+app = FastAPI(
+    lifespan=lifespan,
+    exception_handlers=exc_handlers,
+    openapi_tags=tags_metadata,
+)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,

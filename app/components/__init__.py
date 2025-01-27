@@ -29,3 +29,38 @@ def get_api_router(*, prefix="/api", **kwargs):
 
 
 get_api_router = ft.wraps(get_api_router)(ft.cache(get_api_router))
+
+tags_metadata = [
+    {
+        "name": "Access",
+        "description": "For authentication"
+    },
+    {
+        "name": "User",
+        "description": "Register and operations with User."
+    },
+    {
+        "name": "Seer",
+        "description": "Operations with Seer."
+    },
+    {
+        "name": "Seer Me",
+        "description": "Subset of Seer tag. Start with /me"
+    },
+    {
+        "name": "Seer Id",
+        "description": "Subset of Seer tag. Start with /{seer_id}"
+    },
+    {
+        "name": "Package",
+        "description": "Operations with Seer Package."
+    },
+    {
+        "name": "Transaction",
+        "description": "Topup and read transaction."
+    },
+    {
+        "name": "Appointment",
+        "description": "Operations with Appointment."
+    },
+]
