@@ -1,3 +1,4 @@
+from typing import Literal
 from fastapi import APIRouter
 from fastapi.responses import PlainTextResponse
 
@@ -30,3 +31,43 @@ async def confirm_topup(
     '''
     user_coins = await change_user_coins(session, payload.sub, topup.amount)
     return UserCoins(coins=user_coins)
+
+
+@router.get("/user/me", responses=res.get_self_transactions)
+async def get_self_transactions(
+    payload: UserJWTDep,
+    session: SessionDep,
+    last_id: int = None,
+    limit: int = 10,
+    activity_id: int | Literal['null'] = None,
+    activity_type: str = None,
+    txn_type: TxnType = None,
+    txn_status: TxnStatus = None,
+    direction: Literal['asc', 'desc'] = 'desc'
+):
+    '''
+    ดูรายการธุรกรรมของตัวเอง
+
+    Parameters:
+    ----------
+    - **last_id** (int, optional): สำหรับการแบ่งหน้า
+        กรอง transaction_id < last_id เมื่อ direction เป็น desc
+        และ transaction_id > last_id เมื่อ direction เป็น asc
+    - **limit** (int, optional): จำนวนรายการที่ต้องการ
+    - **activity_id** (int | 'null', optional):
+        กรองหา transaction ที่ activity_id ตรงกับที่กำหนด
+        สามารถใส่ 'null' เพื่อกรองหา activity_id ที่เป็น null
+    - **activity_type** (str, optional):
+        กรองหา transaction ที่ activity_type ตรงกับที่กำหนด
+    - **txn_type** (TxnType, optional):
+        กรอง transaction ที่มี type ตรงกับที่กำหนด
+    - **txn_status** (TxnStatus, optional):
+        กรอง transaction ที่มี status ตรงกับที่กำหนด
+    - **direction** ('asc' | 'desc', optional):
+        เรียงลำดับ transaction ตาม id จากน้อยไปมาก หรือมากไปน้อย
+    '''
+    return await get_transactions(
+        session, last_id, limit, payload.sub,
+        activity_id, activity_type,
+        txn_type, txn_status, direction
+    )

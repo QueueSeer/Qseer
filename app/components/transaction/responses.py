@@ -16,3 +16,11 @@ confirm_topup = {
     },
     **POSSIBLE_JWTCOOKIE_RESPONSE
 }
+
+get_self_transactions = {
+    HTTP_200_OK: {
+        "model": list[TxnOut],
+        "description": "Transactions retrieved."
+    },
+    **POSSIBLE_JWTCOOKIE_RESPONSE
+}
