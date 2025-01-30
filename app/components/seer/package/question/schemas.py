@@ -27,5 +27,5 @@ class QuestionPackageOut(BaseModel):
     @field_validator("is_enabled", mode="before")
     @classmethod
     def date_to_bool(cls, value):
-        return bool(value)
+        return not not value
 
