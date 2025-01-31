@@ -36,13 +36,14 @@ class SeerGetMe(SeerOut):
 
 class SeerUpdate(BaseModel):
     experience: dt.date | None = None
-    description: str | None = None
+    description: str = None
     primary_skill: str | None = None
-    is_available: bool | None = None
+    is_available: bool = None
     bank_name: str | None = Field(None, examples=['PromptPay'])
     bank_no: str | None = Field(None, examples=['0818765432'])
     socials_name: str | None = None
     socials_link: str | None = None
+    break_duration: dt.timedelta = None
 
 
 class SeerObjectId(BaseModel):
