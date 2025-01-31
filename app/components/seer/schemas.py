@@ -81,8 +81,11 @@ class SeerDayOff(BaseModel):
 
 class SeerCalendar(BaseModel):
     seer_id: int
+    break_duration: dt.timedelta
     schedules: list[SeerScheduleOut]
     day_offs: list[dt.date]
+
+    model_config = ConfigDict(ser_json_timedelta='float')
 
 
 class Follower(BaseModel):

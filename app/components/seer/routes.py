@@ -232,10 +232,25 @@ async def seer_calendar(seer_id: int, session: SessionDep):
     day ภายใน schedules คือเลข 0-6 แทนวันจันทร์-อาทิตย์
     '''
     try:
-        await check_active_seer(seer_id, session)
+        stmt = (
+            select(Seer.break_duration).
+            join(User, Seer.id == User.id).
+            where(
+                Seer.id == seer_id,
+                User.is_active == True,
+                Seer.is_active == True
+            )
+        )
+        break_duration = (await session.scalars(stmt)).one()
     except NoResultFound:
         raise NotFoundException("Seer not found.")
-    return await get_calendar(seer_id, session)
+    schedules, day_offs = await get_calendar(seer_id, session)
+    return SeerCalendar(
+        seer_id=seer_id,
+        break_duration=break_duration,
+        schedules=schedules,
+        day_offs=day_offs
+    )
 
 
 router_me.include_router(me_api)

@@ -239,6 +239,9 @@ class Seer(Base):
         REAL(), server_default=text("null")
     )
     review_count: Mapped[int] = mapped_column(server_default=text("0"))
+    break_duration: Mapped[dt.timedelta] = mapped_column(
+        server_default=text("'0'")
+    )
     bank_name: Mapped[strText | None] = mapped_column(
         server_default=text("null") # PromptPay
     )

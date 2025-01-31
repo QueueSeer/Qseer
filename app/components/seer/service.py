@@ -158,7 +158,7 @@ async def get_calendar(seer_id: int, session: AsyncSession):
         where(DayOff.seer_id == seer_id, DayOff.day_off >= func.now())
     )
     day_offs = (await session.scalars(stmt)).all()
-    return SeerCalendar(seer_id=seer_id, schedules=schedules, day_offs=day_offs)
+    return schedules, day_offs
 
 
 async def update_schedule(
