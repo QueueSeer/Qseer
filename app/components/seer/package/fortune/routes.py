@@ -171,3 +171,23 @@ async def get_seer_fortune_package_cards(
         session, seer_id,
         FPStatus.published, last_id, limit
     )
+
+
+@router_id.get("/{package_id}", responses=res.get_seer_fortune_package)
+async def get_seer_fortune_package(
+    session: SessionDep,
+    seer_id: int,
+    package_id: int
+):
+    '''
+    ดูรายละเอียดแพ็คเกจดูดวงของหมอดู
+    '''
+    try:
+        return FortunePackageOut.model_validate(
+            await get_seer_fpackage(
+                session, seer_id,
+                package_id, FPStatus.published
+            )
+        )
+    except NoResultFound:
+        raise NotFoundException("Fortune package not found.")

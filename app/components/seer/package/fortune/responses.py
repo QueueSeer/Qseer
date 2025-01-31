@@ -108,3 +108,20 @@ get_seer_fortune_package_cards = {
         "description": "List of fortune packages."
     }
 }
+
+get_seer_fortune_package = {
+    HTTP_200_OK: {
+        "model": FortunePackageOut,
+        "description": "Fortune package detail."
+    },
+    HTTP_404_NOT_FOUND: {
+        "content": {
+            "application/json": {
+                "example": {
+                    "detail": "Fortune package not found."
+                }
+            },
+        },
+        "description": "Fortune package not found."
+    }
+}

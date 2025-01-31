@@ -10,7 +10,8 @@ from .schemas import *
 async def get_seer_fpackage(
     session: AsyncSession,
     seer_id: int,
-    package_id: int
+    package_id: int,
+    status: FPStatus = None
 ) -> FortunePackage:
     stmt = (
         select(FortunePackage).
@@ -19,6 +20,8 @@ async def get_seer_fpackage(
             FortunePackage.id == package_id
         )
     )
+    if status:
+        stmt = stmt.where(FortunePackage.status == status)
     return (await session.scalars(stmt)).one()
 
 
