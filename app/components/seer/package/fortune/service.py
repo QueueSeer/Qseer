@@ -40,6 +40,7 @@ async def get_fpackage_cards(
             FortunePackage.reading_type,
             FortunePackage.category,
             FortunePackage.image,
+            FortunePackage.date_created,
             FortunePackage.seer_id,
             User.display_name.label("seer_display_name"),
             User.image.label("seer_image"),

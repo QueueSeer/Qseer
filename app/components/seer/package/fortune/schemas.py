@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 from decimal import Decimal
 from enum import Enum
 from typing import Sequence
@@ -30,6 +30,7 @@ class FPackageCardOut(BaseModel):
     reading_type: str | None
     category: str | None
     image: str
+    date_created: datetime
 
     model_config = ConfigDict(from_attributes=True, ser_json_timedelta='float')
 
@@ -52,6 +53,7 @@ class FortunePackageOut(BaseModel):
     category: str | None
     required_data: list[FPRequiredData]
     image: str
+    date_created: datetime
 
     model_config = ConfigDict(from_attributes=True, ser_json_timedelta='float')
 
