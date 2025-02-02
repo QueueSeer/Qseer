@@ -2,8 +2,7 @@ from sqlalchemy import delete, func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import SessionDep
-from app.database.models import QuestionPackage, Seer
-
+from app.database.models import QuestionPackage
 
 from .schemas import *
 
