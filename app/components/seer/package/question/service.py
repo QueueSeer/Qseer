@@ -19,11 +19,6 @@ async def get_questionpackage(session: AsyncSession, seer_id: int):
 
 async def check_field_questionpackagein_first(question_package_in: QuestionPackageIn):
     return (
-        not 'price' in question_package_in or
-        not 'is_enabled' in question_package_in or
-        not 'stack_limit' in question_package_in or
-        not 'image' in question_package_in or
-        not 'description' in question_package_in or
         question_package_in.price == None or
         question_package_in.description == None or
         question_package_in.is_enabled == None or
