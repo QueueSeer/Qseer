@@ -345,6 +345,9 @@ class Withdrawal(Base):
     )
     status: Mapped[WdStatus] = mapped_column(server_default=text("'pending'"))
     date_created: Mapped[timestamp] = mapped_column(server_default=func.now())
+    txn_id: Mapped[int] = mapped_column(
+        ForeignKey("transaction.id"), unique=True
+    )
 
     # seer: Mapped[Seer] = relationship(back_populates="withdrawals")
 
