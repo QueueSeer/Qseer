@@ -323,6 +323,12 @@ class DayOff(Base):
     # seer: Mapped[Seer] = relationship(back_populates="day_offs")
 
 
+class WdStatus(str, pyEnum):
+    pending = "pending"
+    completed = "completed"
+    rejected = "rejected"
+
+
 class Withdrawal(Base):
     __tablename__ = "withdrawal"
 
@@ -337,7 +343,7 @@ class Withdrawal(Base):
     bank_no: Mapped[strText | None] = mapped_column(
         server_default=text("null")
     )
-    status: Mapped[strText] = mapped_column(server_default=text("'pending'"))
+    status: Mapped[WdStatus] = mapped_column(server_default=text("'pending'"))
     date_created: Mapped[timestamp] = mapped_column(server_default=func.now())
 
     # seer: Mapped[Seer] = relationship(back_populates="withdrawals")
@@ -431,6 +437,13 @@ class Activity(Base):
     }
 
 
+class ApmtStatus(str, pyEnum):
+    pending = "pending"
+    cancelled = "cancelled"
+    completed = "completed"
+    other = "other"
+
+
 class Appointment(Activity):
     __tablename__ = "appointment"
 
@@ -442,7 +455,7 @@ class Appointment(Activity):
     f_package_id: Mapped[int | None]
     start_time: Mapped[timestamp] = mapped_column(server_default=func.now())
     end_time: Mapped[timestamp] = mapped_column(server_default=func.now())
-    status: Mapped[strText]
+    status: Mapped[ApmtStatus]
     questions: Mapped[list[str]] = mapped_column(
         ARRAY(Text()), server_default=text("'{}'")
     )

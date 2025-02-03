@@ -1,15 +1,12 @@
 from fastapi import APIRouter
-from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound
 
 from app.core.deps import SeerJWTDep
 from app.core.error import (
-    BadRequestException,
     IntegrityException,
     NotFoundException
 )
 from app.database import SessionDep
-from app.database.models import Seer, QuestionPackage
 from app.components.seer.service import check_active_seer
 
 from . import responses as res
@@ -21,7 +18,7 @@ router_me = APIRouter(prefix="/question")
 
 
 @router_me.get("")
-async def get_QuestionPackage(payload: SeerJWTDep, session: SessionDep):
+async def get_question_package(payload: SeerJWTDep, session: SessionDep):
     '''
     ดูข้อมูล QuestionPackage
     '''
@@ -33,7 +30,7 @@ async def get_QuestionPackage(payload: SeerJWTDep, session: SessionDep):
 
 
 @router_me.put("")
-async def put_QuestionPackage(payload: SeerJWTDep, session: SessionDep, data: QuestionPackageIn):
+async def put_question_package(payload: SeerJWTDep, session: SessionDep, data: QuestionPackageIn):
     '''
     Edit Question Package set ค่าครั้งแรกต้องใส่ครบทุกช่อง
     ครั้งต่อๆ ไปใส่แค่บางช่องก็ได้
@@ -55,7 +52,7 @@ router_id = APIRouter(prefix="/question")
 
 
 @router_id.get("")
-async def GetPacket(session: SessionDep, seer_id: int):
+async def get_seer_question_package(session: SessionDep, seer_id: int):
     '''
     ดูข้อมูล QuestionPackage seer id
     '''
