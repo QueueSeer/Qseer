@@ -17,20 +17,14 @@ async def get_questionpackage(session: AsyncSession, seer_id: int):
     return result
 
 
-async def check_field_questionpackagein_first(question_package_in: QuestionPackageIn):
-    return (
-        question_package_in.price == None or
-        question_package_in.description == None or
-        question_package_in.is_enabled == None or
-        question_package_in.stack_limit == None or
-        question_package_in.image == None
-    )
+def check_field_questionpackagein_first(question_package_in: QuestionPackageIn):
+    return all(value is not None for value in question_package_in.__dict__.values())
 
 
 async def edit_questionpackage(session: SessionDep, user_id: int, qp_data: QuestionPackageIn):
     has_questionpackage = await get_questionpackage(session, user_id)
     if has_questionpackage is None:
-        if check_field_questionpackagein_first(qp_data):
+        if not check_field_questionpackagein_first(qp_data):
             return None
         data = qp_data.model_dump()
         data["seer_id"] = user_id
@@ -40,13 +34,19 @@ async def edit_questionpackage(session: SessionDep, user_id: int, qp_data: Quest
             data["enable_at"] = qp_data.enable_at
         stmt = (
             insert(QuestionPackage).
-            values(data).returning(QuestionPackage.seer_id)
+            values(data).returning(
+                QuestionPackage.price,
+                QuestionPackage.description,
+                QuestionPackage.enable_at.label("is_enabled"),
+                QuestionPackage.stack_limit,
+                QuestionPackage.image
+            )
         )
         result = (await session.execute(stmt)).one_or_none()
         await session.commit()
         if result is None:
             return None
-        return data
+        return QuestionPackageOut.model_validate(result)
     else:
         data = qp_data.model_dump(exclude_unset=True)
         if "is_enabled" in data:
