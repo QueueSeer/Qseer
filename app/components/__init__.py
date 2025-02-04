@@ -56,6 +56,10 @@ tags_metadata = [
         "description": "Operations with Seer Package."
     },
     {
+        "name": "Withdraw",
+        "description": "CRUD Withdraw request."
+    },
+    {
         "name": "Transaction",
         "description": "Topup and read transaction."
     },

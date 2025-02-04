@@ -6,7 +6,6 @@ from sqlalchemy.exc import (
     OperationalError,
     NoResultFound,
 )
-from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.error import (

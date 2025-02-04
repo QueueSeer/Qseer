@@ -17,7 +17,10 @@ from .schemas import *
 async def change_user_coins(
     session: AsyncSession,
     user_id: int,
-    amount: int
+    amount: int,
+    txn_type: TxnType = TxnType.other,
+    txn_status: TxnStatus = TxnStatus.completed,
+    activity_id: int = None
 ):
     stmt = (
         update(User).
@@ -33,15 +36,16 @@ async def change_user_coins(
         insert(Transaction).
         values(
             user_id=user_id,
-            activity_id=None,
+            activity_id=activity_id,
             amount=amount,
-            type=TxnType.topup,
-            status=TxnStatus.completed
-        )
+            type=txn_type,
+            status=txn_status
+        ).
+        returning(Transaction.id)
     )
-    await session.execute(stmt)
+    txn_id = (await session.scalars(stmt)).one()
     await session.commit()
-    return user_coins
+    return user_coins, txn_id
 
 
 async def get_transactions(

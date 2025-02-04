@@ -29,7 +29,10 @@ async def confirm_topup(
     '''
     ยืนยันการเติมเงิน
     '''
-    user_coins = await change_user_coins(session, payload.sub, topup.amount)
+    user_coins, _ = await change_user_coins(
+        session, payload.sub,
+        topup.amount, TxnType.topup
+    )
     return UserCoins(coins=user_coins)
 
 
