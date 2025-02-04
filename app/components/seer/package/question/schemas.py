@@ -8,7 +8,6 @@ class QuestionPackageIn(BaseModel):
     description: str = Field(None, examples=["Just asking."])
     is_enabled: bool = Field(None)
     stack_limit: int = Field(None, ge=0)
-    image: str = Field(None)
 
     @property
     def enable_at(self):

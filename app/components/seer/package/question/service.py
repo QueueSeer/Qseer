@@ -9,11 +9,18 @@ from .schemas import *
 
 async def get_questionpackage(session: AsyncSession, seer_id: int):
     stmt = (
-        select(QuestionPackage).
-        where(QuestionPackage.seer_id == seer_id, QuestionPackage.id == 1)
+        select(QuestionPackage).where(QuestionPackage.seer_id == seer_id, QuestionPackage.id == 1)
     )
     result = (await session.execute(stmt)).scalar_one_or_none()
-    return result
+    if result == None :
+        return result
+    return QuestionPackageOut(
+        price=result.price,
+        description=result.description,
+        is_enabled=result.enable_at,
+        stack_limit=result.stack_limit,
+        image=result.image
+    )
 
 
 def check_field_questionpackagein_first(question_package_in: QuestionPackageIn):
