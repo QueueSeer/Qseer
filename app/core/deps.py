@@ -1,4 +1,4 @@
-from typing import Any, Annotated, Generic, TypeVar
+from typing import Any, Annotated, Generic, Literal, TypeVar
 
 from fastapi.security import APIKeyCookie, HTTPBearer
 from pydantic import AfterValidator, BaseModel, EmailStr
@@ -66,3 +66,5 @@ SeerJWTDep = Annotated[TokenPayload, Depends(user_with_seer_permission)]
 AdminJWTDep = Annotated[TokenPayload, Depends(user_with_admin_permission)]
 
 EmailLower = Annotated[EmailStr, AfterValidator(str.lower)]
+SortingOrder = Literal['asc', 'desc']
+NullLiteral = Literal['null']

@@ -1,4 +1,3 @@
-from typing import Literal
 from fastapi import APIRouter
 from fastapi.responses import PlainTextResponse
 
@@ -42,11 +41,11 @@ async def get_self_transactions(
     session: SessionDep,
     last_id: int = None,
     limit: int = 10,
-    activity_id: int | Literal['null'] = None,
+    activity_id: int | NullLiteral = None,
     activity_type: str = None,
     txn_type: TxnType = None,
     txn_status: TxnStatus = None,
-    direction: Literal['asc', 'desc'] = 'desc'
+    direction: SortingOrder = 'desc'
 ):
     '''
     ดูรายการธุรกรรมของตัวเอง

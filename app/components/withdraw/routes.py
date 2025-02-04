@@ -1,7 +1,6 @@
-from typing import Literal
 from fastapi import APIRouter
 
-from app.core.deps import AdminJWTDep, SeerJWTDep, UserJWTDep
+from app.core.deps import AdminJWTDep, SeerJWTDep, UserJWTDep, SortingOrder
 from app.core.error import (
     BadRequestException,
     NotFoundException,
@@ -24,7 +23,7 @@ async def list_withdraw_requests(
     limit: int = 10,
     requester_id: int = None,
     status: WdStatus = None,
-    direction: Literal['asc', 'desc'] = 'asc'
+    direction: SortingOrder = 'asc'
 ):
     '''
     ดูรายการคำขอถอนเงิน

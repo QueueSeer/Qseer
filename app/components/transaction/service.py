@@ -1,8 +1,8 @@
-from typing import Literal
 from sqlalchemy import asc, desc, insert, select, update
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.deps import SortingOrder, NullLiteral
 from app.core.error import NotFoundException
 from app.database.models import (
     User,
@@ -53,11 +53,11 @@ async def get_transactions(
     last_id: int = None,
     limit: int = 10,
     user_id: int = None,
-    activity_id: int | Literal['null'] = None,
+    activity_id: int | NullLiteral = None,
     activity_type: str = None,
     txn_type: TxnType = None,
     txn_status: TxnStatus = None,
-    direction: Literal['asc', 'desc'] = 'desc'
+    direction: SortingOrder = 'desc'
 ):
     order = asc if direction == 'asc' else desc
     stmt = (
