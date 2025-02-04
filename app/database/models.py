@@ -442,7 +442,8 @@ class Activity(Base):
 
 class ApmtStatus(str, pyEnum):
     pending = "pending"
-    cancelled = "cancelled"
+    u_cancelled = "u_cancelled"
+    s_cancelled = "s_cancelled"
     completed = "completed"
     other = "other"
 
