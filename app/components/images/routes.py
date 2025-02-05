@@ -27,6 +27,9 @@ async def upload_user_profile( payload: UserJWTDep, session: SessionDep, file: U
 
     user_id = payload.sub
 
+    if not await ValidateFile(file):
+        raise HTTPException(status_code=400, detail="Only PNG and JPG files are allowed or File too large. Max size is 10MB.")
+
     local_url = CreateUrl("user",str(user_id))
     stmt = (
         update(User).

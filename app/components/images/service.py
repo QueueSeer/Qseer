@@ -5,6 +5,19 @@ import urllib.parse
 
 custom_url = "https://storage.qseer.app/"
 
+ALLOWED_EXTENSIONS = {"image/png", "image/jpeg"}
+MAX_FILE_SIZE_MB = 10 #MB
+
+async def ValidateFile(file: UploadFile = File(...)):
+    if file.content_type not in ALLOWED_EXTENSIONS:
+        return False
+    
+    contents = await file.read()
+    file_size = len(contents)
+    if file_size > MAX_FILE_SIZE_MB * 1024 * 1024:
+        return False
+    return True
+
 def CreateUrl(part_name : str,file_name :str):
     return custom_url + urllib.parse.quote(part_name+"/"+file_name)
 
