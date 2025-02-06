@@ -34,6 +34,9 @@ async def DeleteImage(part_name : str,file_name :str):
     return True
 
 async def delete_user_profile_image(user_id : int):
+    '''
+    Only Delete at R2 Object Storage :3
+    '''
     try:
         await DeleteImage("user",str(user_id))
     except Exception:
@@ -41,6 +44,9 @@ async def delete_user_profile_image(user_id : int):
     return True
 
 async def delete_fortune_package_image(seer_id : int,package_id : int):
+    '''
+    Only Delete at R2 Object Storage :3
+    '''
     try:
         await DeleteImage("package/fortune",str(seer_id)+"-"+str(package_id))
     except Exception:
@@ -48,6 +54,9 @@ async def delete_fortune_package_image(seer_id : int,package_id : int):
     return True
 
 async def delete_question_package_image(seer_id : int):
+    '''
+    Only Delete at R2 Object Storage :3
+    '''
     try:
         await DeleteImage("package/question",str(seer_id)+"-"+str(1))
     except Exception:
