@@ -83,6 +83,14 @@ async def exception_handler(request: Request, exc: HTTPException):
     )
 
 
+async def py_exc_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        content={"detail": repr(exc)},
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+    )
+
+
 exc_handlers = {
     JSONException: exception_handler,
+    NotImplementedError: py_exc_handler,
 }

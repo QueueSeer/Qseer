@@ -44,7 +44,7 @@ cookie_scheme = JWTCookie(
 
 
 def user_with_seer_permission(token: TokenPayload = Depends(cookie_scheme)):
-    if "seer" not in token.roles:
+    if not token.is_seer:
         raise HTTPException(
             status_code=HTTP_403_FORBIDDEN,
             detail="No permission."
@@ -53,7 +53,7 @@ def user_with_seer_permission(token: TokenPayload = Depends(cookie_scheme)):
 
 
 def user_with_admin_permission(token: TokenPayload = Depends(cookie_scheme)):
-    if "admin" not in token.roles:
+    if not token.is_admin:
         raise HTTPException(
             status_code=HTTP_403_FORBIDDEN,
             detail="No permission."

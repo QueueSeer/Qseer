@@ -23,6 +23,14 @@ class TokenPayload(BaseModel):
     exp: Any = Field(examples=[1800000000])
     sub: int
     roles: list[str] = Field(examples=[["seer"]])
+    
+    @property
+    def is_seer(self) -> bool:
+        return 'seer' in self.roles
+    
+    @property
+    def is_admin(self) -> bool:
+        return 'admin' in self.roles
 
 
 class UserId(BaseModel):

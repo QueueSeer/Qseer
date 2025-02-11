@@ -49,6 +49,7 @@ async def list_withdraw_requests(
     # โยนการทำงานไปที่ service ให้หมด api อื่นด้วย
     # ดู get_self_transactions ใน transaction เป็นตัวอย่าง
     # return list of WithdrawalOut
+    raise NotImplementedError
 
 
 @router.post("", responses=res.request_withdrawal)
@@ -67,6 +68,7 @@ async def request_withdrawal(
     # แล้วสร้าง Withdrawal (ไปเขียน func ใน service)
     # WdStatus.pending
     # status 201: return WithdrawRequestResult
+    raise NotImplementedError
 
 
 @router.get("/{wid}", responses=res.get_withdraw_request)
@@ -82,6 +84,7 @@ async def get_withdraw_request(
     # ถ้าไม่ใช่ admin และ requester_id ไม่ตรงกับ payload.sub
     # หรือหา request ไม่เจอ ให้
     # return NotFoundException("Request not found.")
+    raise NotImplementedError
 
 
 @router.patch("/{wid}/status/complete", responses=res.complete_request)
@@ -96,6 +99,7 @@ async def complete_withdraw_request(
     # เปลี่ยนสถานะ withdrawal จาก pending เป็น completed
     # เปลี่ยนสถานะ transaction จาก hold เป็น completed
     # return Message("Completed.")
+    raise NotImplementedError
 
 
 @router.patch("/{wid}/status/reject", responses=res.reject_request)
@@ -111,6 +115,7 @@ async def reject_withdraw_request(
     # เปลี่ยนสถานะ transaction จาก hold เป็น cancelled
     # แล้วคืนเงินให้ user
     # return Message("Rejected.")
+    raise NotImplementedError
 
 
 @router.delete("/{wid}", responses=res.cancel_request)
@@ -127,3 +132,4 @@ async def cancel_withdraw_request(
     # เปลี่ยนสถานะ transaction จาก hold เป็น cancelled
     # คืนเงินให้ user แล้วลบ withdrawal ออก
     # return Message("Cancelled.")
+    raise NotImplementedError
