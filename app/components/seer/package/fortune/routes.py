@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound
 
@@ -29,13 +29,13 @@ router = APIRouter(prefix="/fortune")
 router_me = APIRouter(prefix="/fortune")
 
 
-@router_me.get("", responses=res.get_self_fpackage_cards)
-async def get_self_fpackage_cards(
+@router_me.get("", responses=res.get_self_fortune_package_cards)
+async def get_self_fortune_package_cards(
     payload: SeerJWTDep,
     session: SessionDep,
     status: FPStatus = None,
     last_id: int = 0,
-    limit: int = 10
+    limit: int = Query(10, ge=1, le=100)
 ):
     '''
     ดูรายการแพ็คเกจดูดวงของตัวเอง
@@ -162,7 +162,7 @@ async def get_seer_fortune_package_cards(
     session: SessionDep,
     seer_id: int,
     last_id: int = 0,
-    limit: int = 10
+    limit: int = Query(10, ge=1, le=100)
 ):
     '''
     ดูรายการแพ็คเกจดูดวงของหมอดู

@@ -3,7 +3,7 @@ from app.components.responses import *
 from app.core.schemas import RowCount
 from .schemas import *
 
-get_self_fpackage_cards = {
+get_self_fortune_package_cards = {
     HTTP_200_OK: {
         "model": PackageListOut,
         "description": "List of fortune packages."

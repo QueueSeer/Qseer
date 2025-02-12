@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from fastapi.responses import PlainTextResponse
 
 from app.core.deps import UserJWTDep
@@ -40,7 +40,7 @@ async def get_self_transactions(
     payload: UserJWTDep,
     session: SessionDep,
     last_id: int = None,
-    limit: int = 10,
+    limit: int = Query(10, ge=1, le=100),
     activity_id: int | NullLiteral = None,
     activity_type: str = None,
     txn_type: TxnType = None,

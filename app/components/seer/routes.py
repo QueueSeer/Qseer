@@ -4,6 +4,7 @@ from fastapi import (
     BackgroundTasks,
     Request,
     status,
+    Query,
 )
 from sqlalchemy import insert, update
 from sqlalchemy.exc import NoResultFound
@@ -203,7 +204,7 @@ async def seer_followers(
     session: SessionDep,
     seer_id: int,
     last_id: int = 0,
-    limit: int = 10
+    limit: int = Query(10, ge=1, le=1000)
 ):
     '''
     ดูรายชื่อผู้ติดตามหมอดู (ไม่ได้ตรวจสอบค่า is_active ของผู้ติดตาม)
@@ -227,7 +228,7 @@ async def seer_total_followers(seer_id: int, session: SessionDep):
 async def seer_calendar(seer_id: int, session: SessionDep):
     '''
     ดูข้อมูลตารางเวลารายสัปดาห์และวันหยุดของหมอดู
-    วันหยุดที่ส่งกลับมาจะไม่มีวันหยุดในอดีต
+    วันหยุดที่ส่งกลับมาจะไม่มีวันหยุดในอดีต และมีไม่เกิน 90 วัน
 
     day ภายใน schedules คือเลข 0-6 แทนวันจันทร์-อาทิตย์
     '''
@@ -244,7 +245,8 @@ async def seer_calendar(seer_id: int, session: SessionDep):
         break_duration = (await session.scalars(stmt)).one()
     except NoResultFound:
         raise NotFoundException("Seer not found.")
-    schedules, day_offs = await get_calendar(seer_id, session)
+    schedules = await get_schedules(session, seer_id)
+    day_offs = await get_day_offs(session, seer_id, limit=90)
     return SeerCalendar(
         seer_id=seer_id,
         break_duration=break_duration,
