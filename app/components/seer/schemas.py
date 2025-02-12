@@ -1,6 +1,6 @@
 import datetime as dt
 from typing import Annotated, Any
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class SeerIn(BaseModel):
@@ -55,25 +55,58 @@ class SeerObjectIdList(BaseModel):
     ids: list[SeerObjectId]
 
 
-class SeerScheduleIn(BaseModel):
-    start_time: dt.time
-    end_time: dt.time
-    day: int = Field(ge=0, le=6)
-
-
-class SeerScheduleUpdate(BaseModel):
-    start_time: dt.time | None = None
-    end_time: dt.time | None = None
-    day: int | None = Field(None, ge=0, le=6)
-
-
-class SeerScheduleOut(BaseModel):
-    id: int
+class SeerSchedule(BaseModel):
     start_time: dt.time
     end_time: dt.time
     day: int
 
+    @property
+    def start_seconds(self) -> int:
+        return (
+            self.start_time.hour * 3600 +
+            self.start_time.minute * 60 +
+            self.start_time.second
+        )
+
+    @property
+    def end_seconds(self) -> int:
+        sec = (
+            self.end_time.hour * 3600 +
+            self.end_time.minute * 60 +
+            self.end_time.second
+        )
+        if sec == 0:
+            return 86400
+        return sec
+    
+    @property
+    def day_seconds(self) -> int:
+        return self.day * 86400
+
     model_config = ConfigDict(from_attributes=True)
+
+
+class SeerScheduleIn(SeerSchedule):
+    start_time: dt.time = Field(examples=['08:00:00'])
+    end_time: dt.time = Field(examples=['17:00:00'])
+    day: int = Field(ge=0, le=6)
+
+    @model_validator(mode='after')
+    def validate_time(self):
+        utc7 = dt.timezone(dt.timedelta(hours=7))
+        start_tz = self.start_time.tzinfo
+        end_tz = self.end_time.tzinfo
+        if ((start_tz is not None and start_tz != utc7) or
+                (end_tz is not None and end_tz != utc7)):
+            raise ValueError("Time zone must be UTC+7 or None.")
+        if start_tz != end_tz:
+            raise ValueError("Time zone must be the same.")
+        self.start_time = self.start_time.replace(microsecond=0, tzinfo=utc7)
+        self.end_time = self.end_time.replace(microsecond=0, tzinfo=utc7)
+        if (self.start_time >= self.end_time and
+                self.end_time != dt.time(0, tzinfo=utc7)):
+            raise ValueError("Start time must be before end time.")
+        return self
 
 
 class SeerDayOff(BaseModel):
@@ -83,7 +116,7 @@ class SeerDayOff(BaseModel):
 class SeerCalendar(BaseModel):
     seer_id: int
     break_duration: dt.timedelta
-    schedules: list[SeerScheduleOut]
+    schedules: list[SeerSchedule]
     day_offs: list[dt.date]
 
     model_config = ConfigDict(ser_json_timedelta='float')

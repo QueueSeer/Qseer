@@ -11,7 +11,11 @@ from sqlalchemy.exc import NoResultFound
 
 from app.core.config import settings
 from app.core.deps import UserJWTDep, SeerJWTDep
-from app.core.error import BadRequestException, NotFoundException
+from app.core.error import (
+    BadRequestException,
+    NotFoundException,
+    InternalException,
+)
 from app.core.security import (
     create_jwt,
     decode_jwt,
@@ -107,65 +111,62 @@ async def update_seer_me(
         raise NotFoundException("Seer not found.")
     return seer_update.model_dump(exclude_unset=True)
 
-
-@router_me.post(
-    "/schedule",
-    status_code=status.HTTP_201_CREATED,
-    responses=res.create_seer_schedule
-)
-async def create_seer_schedule(
+@router_me.put("/schedule", responses=res.edit_seer_schedule)
+async def edit_seer_schedule(
     schedules: list[SeerScheduleIn],
     payload: SeerJWTDep,
     session: SessionDep
 ):
     '''
-    สร้างตารางเวลาหมอดู
+    แก้ไขตารางเวลาหมอดู
 
-    day ภายใน schedules คือเลข 0-6 แทนวันจันทร์-อาทิตย์
+    Details:
+    - ถ้ามีตารางเวลาที่อยู่ติดกันหรือซ้อนทับกัน จะถือว่าเป็นตารางเวลาเดียวกัน
+    - day ภายใน schedules คือเลข 0-6 แทนวันจันทร์-อาทิตย์
+    - เมิน microsecond ใน start_time และ end_time
+    - ถ้า end_time มีค่าเป็น 00:00:00 จะถือว่าเป็น 24:00:00
+    - inclusive start_time, exclusive end_time
+    - format เวลา คือ "HH:MM:SS" หรือ "HH:MM:SS+07:00"
     '''
-    id_list = [
-        SeerObjectId(seer_id=payload.sub, id=sch_id)
-        for sch_id in (await session.scalars(
-            insert(Schedule).
-            values([
-                sch.model_dump() | {"seer_id": payload.sub}
-                for sch in schedules
-            ]).
-            returning(Schedule.id)
-        )).all()
-    ]
-    await session.commit()
-    return SeerObjectIdList.model_construct(ids=id_list)
+    sch_rows = await get_schedules(session, payload.sub)
+    merged = simplify_schedules(schedules)
+    to_add = []
+    if len(merged) > len(sch_rows):
+        to_add = merged[len(sch_rows):]
+        merged = merged[:len(sch_rows)]
 
+    change, will_del = sch_rows[:len(merged)], sch_rows[len(merged):]
 
-@router_me.patch("/schedule/{schedule_id}", responses=res.update_seer_schedule)
-async def update_seer_schedule(
-    schedule_id: int,
-    schedule: SeerScheduleUpdate,
-    payload: SeerJWTDep,
-    session: SessionDep
-):
-    '''
-    แก้ไขตารางเวลาหมอดู ส่งแค่ข้อมูลที่ต้องการแก้ไข
-    '''
-    try:
-        return await update_schedule(
+    if will_del:
+        count = await delete_extra_schedules(
+            session,
             payload.sub,
-            schedule_id,
-            schedule,
-            session
+            will_del[0].day,
+            will_del[0].start_time
         )
-    except NoResultFound:
-        raise NotFoundException("Schedule not found.")
+        if count != len(will_del):
+            raise InternalException("Bug: delet_count != len(will_del)")
 
+    for sch1, sch2 in zip(merged, change):
+        sch2.start_time = sch1.start_time
+        sch2.end_time = sch1.end_time
+        sch2.day = sch1.day
 
-@router_me.delete("/schedule/{schedule_id}", responses=res.delete_seer_schedule)
-async def delete_seer_schedule(schedule_id: int, payload: SeerJWTDep, session: SessionDep):
-    '''
-    ลบตารางเวลาหมอดู
-    '''
-    count = await delete_schedule(payload.sub, schedule_id, session)
-    return RowCount(count=count)
+    session.add_all([
+        Schedule(
+            seer_id=payload.sub,
+            start_time=sch.start_time,
+            end_time=sch.end_time,
+            day=sch.day
+        )
+        for sch in to_add
+    ])
+
+    await session.commit()
+    return [
+        SeerScheduleIn.model_validate(sch)
+        for sch in await get_schedules(session, payload.sub)
+    ]
 
 
 @router_me.post("/dayoff", status_code=201, responses=res.seer_dayoff)

@@ -147,45 +147,69 @@ async def get_seer_total_followers(session: AsyncSession, seer_id: int):
     return (await session.scalars(stmt)).one()
 
 
-async def get_calendar(seer_id: int, session: AsyncSession):
+def simplify_schedules(schedules: list[SeerScheduleIn]):
+    if not schedules:
+        return schedules
+    schedules.sort(key=lambda sch: (sch.day, sch.start_time))
+    merged = [schedules[0]]
+    for sch in schedules[1:]:
+        last = merged[-1]
+        if last.day == sch.day and last.end_time >= sch.start_time:
+            last.end_time = sch.end_time
+        else:
+            merged.append(sch)
+    return merged
+
+
+async def get_schedules(session: AsyncSession, seer_id: int):
     stmt = (
         select(Schedule).
-        where(Schedule.seer_id == seer_id)
+        where(Schedule.seer_id == seer_id).
+        order_by(Schedule.day, Schedule.start_time)
     )
-    schedules = (await session.scalars(stmt)).all()
+    return (await session.scalars(stmt)).all()
+
+
+async def get_day_offs(
+    session: AsyncSession,
+    seer_id: int,
+    start_date: dt.date = None,
+    end_date: dt.date = None,
+    include_past: bool = False,
+    limit: int = None,
+    offset: int = 0
+):
     stmt = (
         select(DayOff.day_off).
-        where(DayOff.seer_id == seer_id, DayOff.day_off >= func.now())
+        where(DayOff.seer_id == seer_id)
     )
-    day_offs = (await session.scalars(stmt)).all()
-    return schedules, day_offs
+    if start_date:
+        stmt = stmt.where(DayOff.day_off >= start_date)
+    if end_date:
+        stmt = stmt.where(DayOff.day_off <= end_date)
+    if not include_past:
+        stmt = stmt.where(DayOff.day_off >= func.now())
+    if limit:
+        stmt = stmt.order_by(DayOff.day_off).limit(limit).offset(offset)
+    return (await session.scalars(stmt)).all()
 
 
-async def update_schedule(
+async def delete_extra_schedules(
+    session: AsyncSession,
     seer_id: int,
-    schedule_id: int,
-    schedule: SeerScheduleUpdate,
-    session: AsyncSession
+    day: int,
+    start_time: dt.time
 ):
-    schedule_dict = schedule.model_dump(exclude_unset=True)
-    stmt = (
-        update(Schedule).
-        where(Schedule.id == schedule_id, Schedule.seer_id == seer_id).
-        values(schedule_dict).
-        returning(Schedule)
-    )
-    updated_schedule = (await session.scalars(stmt)).one()
-    await session.commit()
-    return SeerScheduleOut.model_validate(updated_schedule)
-
-
-async def delete_schedule(seer_id: int, schedule_id: int, session: AsyncSession):
+    '''No commit here'''
     stmt = (
         delete(Schedule).
-        where(Schedule.id == schedule_id, Schedule.seer_id == seer_id)
+        where(
+            Schedule.seer_id == seer_id,
+            Schedule.day >= day,
+            Schedule.start_time >= start_time
+        )
     )
     deleted_count = (await session.execute(stmt)).rowcount
-    await session.commit()
     return deleted_count
 
 

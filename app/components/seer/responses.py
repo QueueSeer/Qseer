@@ -76,37 +76,10 @@ update_seer_me = {
     }
 }
 
-
-create_seer_schedule = {
-    HTTP_201_CREATED: {
-        "model": SeerObjectIdList,
+edit_seer_schedule = {
+    HTTP_200_OK: {
+        "model": list[SeerScheduleIn],
         "description": "Schedules created."
-    },
-    **POSSIBLE_JWTCOOKIE_RESPONSE
-}
-
-update_seer_schedule = {
-    HTTP_200_OK: {
-        "model": SeerScheduleOut,
-        "description": "Schedule updated."
-    },
-    HTTP_404_NOT_FOUND: {
-        "content": {
-            "application/json": {
-                "example": {
-                    "detail": "Schedule not found."
-                }
-            },
-        },
-        "description": "Schedule does not exist."
-    },
-    **POSSIBLE_JWTCOOKIE_RESPONSE
-}
-
-delete_seer_schedule = {
-    HTTP_200_OK: {
-        "model": RowCount,
-        "description": "Returned the number of deleted schedules."
     },
     **POSSIBLE_JWTCOOKIE_RESPONSE
 }
