@@ -191,3 +191,33 @@ async def get_seer_fortune_package(
         )
     except NoResultFound:
         raise NotFoundException("Fortune package not found.")
+
+
+@router_id.get("/{package_id}/time-slots", responses=res.get_time_slots)
+async def get_seer_fortune_package_time_slots(
+    session: SessionDep,
+    seer_id: int,
+    package_id: int,
+    start_date: date = None,
+    end_date: date = None,
+):
+    '''
+    ดูรายการเวลาที่หมอดูว่างสำหรับแพ็คเกจดูดวง
+    ในช่วงระหว่างวันที่ `start_date` ถึง `end_date` (inclusive)
+    '''
+    if start_date is None and end_date is None:
+        start_date = end_date = date.today()
+    elif start_date is None:
+        start_date = end_date
+    elif end_date is None:
+        end_date = start_date
+
+    if (end_date - start_date).days + 1 > 90:
+        raise BadRequestException("Date range must not exceed 90 days.")
+    
+    slots = await get_fpackage_time_slots(
+        session,
+        seer_id, package_id,
+        start_date, end_date
+    )
+    return [TimeSlot(start_time=s[0], end_time=s[1]) for s in slots]

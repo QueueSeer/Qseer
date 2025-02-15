@@ -20,7 +20,9 @@ async def change_user_coins(
     amount: int,
     txn_type: TxnType = TxnType.other,
     txn_status: TxnStatus = TxnStatus.completed,
-    activity_id: int = None
+    activity_id: int = None,
+    *,
+    commit: bool = True
 ):
     stmt = (
         update(User).
@@ -44,7 +46,8 @@ async def change_user_coins(
         returning(Transaction.id)
     )
     txn_id = (await session.scalars(stmt)).one()
-    await session.commit()
+    if commit:
+        await session.commit()
     return user_coins, txn_id
 
 

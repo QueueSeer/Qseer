@@ -93,4 +93,5 @@ async def py_exc_handler(request: Request, exc: Exception):
 exc_handlers = {
     JSONException: exception_handler,
     NotImplementedError: py_exc_handler,
+    AssertionError: py_exc_handler,
 }

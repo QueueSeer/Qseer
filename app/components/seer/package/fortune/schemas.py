@@ -106,3 +106,10 @@ class FortunePackageEdit(FortunePackageDraft):
 
 class FPStatusChange(BaseModel):
     status: FPStatus = Field(examples=[FPStatus.published])
+
+
+class TimeSlot(BaseModel):
+    start_time: datetime
+    end_time: datetime
+
+    model_config = ConfigDict(from_attributes=True)

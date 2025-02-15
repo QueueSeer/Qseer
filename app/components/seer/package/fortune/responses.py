@@ -125,3 +125,20 @@ get_seer_fortune_package = {
         "description": "Fortune package not found."
     }
 }
+
+get_time_slots = {
+    HTTP_200_OK: {
+        "model": list[TimeSlot],
+        "description": "List of available time slots."
+    },
+    HTTP_404_NOT_FOUND: {
+        "content": {
+            "application/json": {
+                "example": {
+                    "detail": "Not found."
+                }
+            },
+        },
+        "description": "Seer or Fortune package not found."
+    }
+}
