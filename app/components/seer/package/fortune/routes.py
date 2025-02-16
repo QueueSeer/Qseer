@@ -1,7 +1,9 @@
+from datetime import date
 from fastapi import APIRouter, Query
 from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound
 
+from app.components.appointment.time_slots import get_free_time_slots
 from app.core.deps import SeerJWTDep
 from app.core.error import (
     BadRequestException,
@@ -215,7 +217,7 @@ async def get_seer_fortune_package_time_slots(
     if (end_date - start_date).days + 1 > 90:
         raise BadRequestException("Date range must not exceed 90 days.")
     
-    slots = await get_fpackage_time_slots(
+    slots = await get_free_time_slots(
         session,
         seer_id, package_id,
         start_date, end_date

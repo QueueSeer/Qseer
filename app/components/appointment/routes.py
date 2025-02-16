@@ -16,6 +16,7 @@ from ..transaction.service import change_user_coins
 from . import responses as res
 from .schemas import *
 from .service import *
+from .time_slots import get_appointments_in_date_range
 
 router = APIRouter(prefix="/appointment", tags=["Appointment"])
 

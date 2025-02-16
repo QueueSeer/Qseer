@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import timedelta
 from sqlalchemy import asc, desc, insert, select, update
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,13 +8,10 @@ from app.core.error import BadRequestException, NotFoundException
 from app.database.models import (
     Appointment,
     ApmtStatus,
-    coin,
     FPStatus,
 )
-from ..seer.package.fortune.service import (
-    get_fpackage_time_slots,
-)
 from .schemas import *
+from .time_slots import get_free_time_slots
 
 
 async def get_appointments(
@@ -69,45 +66,6 @@ async def get_appointment_by_id(
     )
 
 
-async def get_appointments_in_date_range(
-    session: AsyncSession,
-    seer_id: int,
-    start_date: date,
-    end_date: date,
-    exclude_cancelled: bool = False
-):
-    end_date = end_date + timedelta(days=1)
-    stmt = (
-        select(
-            Appointment.id,
-            Appointment.seer_id,
-            Appointment.f_package_id.label('package_id'),
-            Appointment.start_time,
-            Appointment.end_time,
-            Appointment.status,
-        ).
-        where(
-            Appointment.seer_id == seer_id,
-            (
-                (Appointment.start_time >= start_date) &
-                (Appointment.start_time < end_date)
-            ) | (
-                (Appointment.end_time > start_date) &
-                (Appointment.end_time <= end_date)
-            )
-        )
-    )
-    if exclude_cancelled:
-        stmt = stmt.where(
-            Appointment.status != ApmtStatus.u_cancelled,
-            Appointment.status != ApmtStatus.s_cancelled
-        )
-    return [
-        AppointmentPublic.model_validate(r)
-        for r in (await session.execute(stmt))
-    ]
-
-
 async def create_appointment(
     session: AsyncSession,
     client_id: int,
@@ -148,7 +106,7 @@ async def create_appointment(
         if end_time - start_time != duration:
             raise ValueError("end_time does not match package duration")
 
-    slots = await get_fpackage_time_slots(
+    slots = await get_free_time_slots(
         session,
         seer_id, package_id,
         start_time.date(), start_time.date(),
