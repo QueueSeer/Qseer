@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import timedelta, timezone
 from sqlalchemy import asc, desc, insert, select, update
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.deps import SortingOrder
 from app.core.error import BadRequestException, NotFoundException
 from app.database.models import (
+    Activity,
     Appointment,
     ApmtStatus,
     FPStatus,
@@ -106,6 +107,16 @@ async def create_appointment(
         if end_time - start_time != duration:
             raise ValueError("end_time does not match package duration")
 
+    BKK = timezone(timedelta(hours=7))
+    if start_time.tzinfo is None:
+        start_time = start_time.replace(tzinfo=BKK)
+    else:
+        start_time = start_time.astimezone(BKK)
+    if end_time.tzinfo is None:
+        end_time = end_time.replace(tzinfo=BKK)
+    else:
+        end_time = end_time.astimezone(BKK)
+
     slots = await get_free_time_slots(
         session,
         seer_id, package_id,
@@ -115,7 +126,10 @@ async def create_appointment(
     if (start_time, end_time) not in slots:
         raise BadRequestException("Time slot not available.")
 
-    apmt = Appointment(
+    stmt = insert(Activity).values(type="appointment").returning(Activity.id)
+    activity_id = (await session.scalars(stmt)).one()
+    stmt = insert(Appointment).values(
+        id=activity_id,
         client_id=client_id,
         seer_id=seer_id,
         f_package_id=package_id,
@@ -125,7 +139,7 @@ async def create_appointment(
         questions=questions,
         confirmation_code=confirmation_code,
     )
-    session.add(apmt)
+    await session.execute(stmt)
     if commit:
         await session.commit()
-    return apmt.id
+    return activity_id
