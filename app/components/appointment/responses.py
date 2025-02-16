@@ -51,7 +51,7 @@ make_an_appointment = {
                 "example": {"detail": "Invalid input."}
             }
         },
-        "description": "Insufficient coins or Time slot not available."
+        "description": "Exceeded question limit, Insufficient coins or Time slot not available."
     },
     HTTP_404_NOT_FOUND: {
         "content": {

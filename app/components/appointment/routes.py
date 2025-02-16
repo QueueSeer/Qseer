@@ -160,7 +160,11 @@ async def make_an_appointment(
     ผู้ใช้จองคิวหมอดู
     '''
     stmt = (
-        select(FortunePackage.duration, FortunePackage.price).
+        select(
+            FortunePackage.duration,
+            FortunePackage.price,
+            FortunePackage.question_limit
+        ).
         where(
             FortunePackage.seer_id == apmt.seer_id,
             FortunePackage.id == apmt.package_id,
@@ -173,6 +177,9 @@ async def make_an_appointment(
         row = (await session.execute(stmt)).one()
     except NoResultFound:
         raise NotFoundException("Fortune package not found.")
+    
+    if row.question_limit >= 0 and len(apmt.questions) > row.question_limit:
+        raise BadRequestException("Exceeded question limit.")
     
     stmt = (
         select(User.coins).

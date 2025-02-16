@@ -59,6 +59,8 @@ async def draft_fortune_package(
 
     - **name**: ชื่อแพ็คเกจ ค่าที่จำเป็น
     - **duration**: [วิธีการส่งค่า timedelta](https://docs.pydantic.dev/latest/api/standard_library_types/#datetimetimedelta)
+    - **question_limit**: จำนวนคำถามที่ผู้ใช้งานสามารถถามได้ ค่าไม่เกิน 6
+        โดยค่าที่น้อยกว่า 0 คือไม่จำกัดจำนวนคำถาม และค่าเท่ากับ 0 คือไม่ให้ส่งคำถาม
     - **foretell_channel**: ค่าที่เป็นไปได้คือ "chat", "phone", "video"
     - **required_data**: เป็น list ชื่อข้อมูลที่ต้องการจากผู้ใช้งาน
     ค่าภายในที่เป็นไปได้คือ "name", "birthdate", "phone_number"
