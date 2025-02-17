@@ -37,7 +37,7 @@ async def google_signin(
     response: Response,
 ):
     '''
-    เข้าสู่ระบบด้วย Google Sign-In ถ้าไม่มีบัญชีในระบบจะต้องใส่ username ด้วย
+    เข้าสู่ระบบด้วย Google Sign-In
     '''
     try:
         idinfo = id_token.verify_oauth2_token(

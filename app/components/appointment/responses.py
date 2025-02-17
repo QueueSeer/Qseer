@@ -1,3 +1,4 @@
+from app.core.schemas import Message
 from ..responses import *
 from .schemas import *
 
@@ -21,6 +22,26 @@ get_an_appointment = {
             }
         },
         "description": "Appointment not found."
+    },
+    **POSSIBLE_JWTCOOKIE_RESPONSE
+}
+
+complete_appointment = {
+    HTTP_200_OK: {
+        "content": {
+            "application/json": {
+                "example": {"message": "Appointment completed."}
+            }
+        },
+        "description": "Appointment completed."
+    },
+    HTTP_404_NOT_FOUND: {
+        "content": {
+            "application/json": {
+                "example": {"detail": "Pending appointment not found."}
+            }
+        },
+        "description": "Pending appointment not found."
     },
     **POSSIBLE_JWTCOOKIE_RESPONSE
 }

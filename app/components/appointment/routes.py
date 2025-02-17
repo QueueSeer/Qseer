@@ -9,6 +9,7 @@ from app.core.error import (
     BadRequestException,
     NotFoundException,
 )
+from app.core.schemas import Message
 from app.database import SessionDep
 from app.database.models import ApmtStatus, TxnType, TxnStatus
 
@@ -108,6 +109,28 @@ async def get_an_appointment(
         )
     except NoResultFound:
         raise NotFoundException("Appointment not found.")
+
+
+@router.patch("/{apmt_id}/complete", responses=res.complete_appointment)
+async def complete_appointment(
+    session: SessionDep,
+    payload: SeerJWTDep,
+    apmt_id: int
+):
+    await mark_appointment_completed(session, apmt_id)
+    return Message("Appointment completed.")
+
+
+@router.patch("/{apmt_id}/cancel")
+async def cancel_appointment(
+    session: SessionDep,
+    payload: UserJWTDep,
+    apmt_id: int
+):
+    raise NotImplementedError
+    # ApmtStatus = ApmtStatus.u_cancelled or s_cancelled
+    # TxnStatus = TxnStatus.cancelled
+    # Give money back to user (TxnStatus.cancelled)
 
 
 @router.get("/seer/{seer_id}", responses=res.get_seer_appointments)
@@ -220,10 +243,3 @@ async def make_an_appointment(
         txn_id=txn_id,
         coins=user_coins,
     )
-
-
-# Complete appointment
-# ApmtStatus, TxnStatus manually change later.
-
-
-# Cancel appointment

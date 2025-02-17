@@ -1,5 +1,5 @@
 from datetime import timedelta, timezone
-from sqlalchemy import asc, desc, insert, select, update
+from sqlalchemy import asc, desc, func, insert, select, update
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,7 +10,11 @@ from app.database.models import (
     Appointment,
     ApmtStatus,
     FPStatus,
+    Transaction,
+    TxnStatus,
+    TxnType,
 )
+from ..transaction.service import change_user_coins
 from .schemas import *
 from .time_slots import get_free_time_slots
 
@@ -143,3 +147,44 @@ async def create_appointment(
     if commit:
         await session.commit()
     return activity_id
+
+
+async def mark_appointment_completed(
+    session: AsyncSession,
+    apmt_id: int,
+):
+    # Change appointment status to completed
+    stmt = (
+        update(Appointment).
+        where(
+            Appointment.id == apmt_id,
+            Appointment.status == ApmtStatus.pending
+        ).
+        values(status=ApmtStatus.completed).
+        returning(Appointment.client_id, Appointment.seer_id)
+    )
+    try:
+        client_id, seer_id = (await session.execute(stmt)).one()
+    except NoResultFound:
+        raise NotFoundException("Pending appointment not found.")
+
+    # Change transaction status to completed
+    stmt = (
+        update(Transaction).
+        where(
+            Transaction.activity_id == apmt_id,
+            Transaction.user_id == client_id,
+            Transaction.status == TxnStatus.hold
+        ).
+        values(status=TxnStatus.completed).
+        returning(Transaction.amount)
+    )
+    paid = abs(sum(await session.scalars(stmt)))
+    
+    # Give money to seer
+    return await change_user_coins(
+        session, seer_id, paid,
+        TxnType.appointment,
+        TxnStatus.completed,
+        apmt_id
+    )
