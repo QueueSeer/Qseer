@@ -7,4 +7,4 @@ services:
     environment:
       - WEB_CONCURRENCY
     ports:
-      - "8000:8000"
+      - "9100:8000"
