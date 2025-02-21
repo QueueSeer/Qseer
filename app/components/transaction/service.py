@@ -98,3 +98,74 @@ async def get_transactions(
         TxnOut.model_validate(t)
         for t in (await session.execute(stmt)).all()
     ]
+
+
+async def cancel_activity_transactions(
+    session: AsyncSession,
+    user_id: int,
+    activity_id: int,
+    txn_type: TxnType = None,
+    txn_status: TxnStatus = None,
+    *,
+    commit: bool = True
+):
+    stmt = (
+        update(Transaction).
+        where(
+            Transaction.user_id == user_id,
+            Transaction.activity_id == activity_id
+        ).
+        values(status=TxnStatus.cancelled).
+        returning(Transaction.amount)
+    )
+    if txn_type is not None:
+        stmt = stmt.where(Transaction.type == txn_type)
+    if txn_status is not None:
+        stmt = stmt.where(Transaction.status == txn_status)
+
+    amount = sum(await session.scalars(stmt))
+    
+    stmt = (
+        update(User).
+        where(User.id == user_id, User.is_active == True).
+        values(coins=User.coins - amount).
+        returning(User.coins)
+    )
+    try:
+        user_coins = (await session.scalars(stmt)).one()
+    except NoResultFound:
+        raise NotFoundException("User not found.")
+    
+    if commit:
+        await session.commit()
+    return user_coins
+
+
+async def complete_activity_transactions(
+    session: AsyncSession,
+    user_id: int,
+    activity_id: int,
+    txn_type: TxnType = None,
+    txn_status: TxnStatus = None,
+    *,
+    commit: bool = True
+):
+    stmt = (
+        update(Transaction).
+        where(
+            Transaction.user_id == user_id,
+            Transaction.activity_id == activity_id
+        ).
+        values(status=TxnStatus.completed).
+        returning(Transaction.amount)
+    )
+    if txn_type is not None:
+        stmt = stmt.where(Transaction.type == txn_type)
+    if txn_status is not None:
+        stmt = stmt.where(Transaction.status == txn_status)
+
+    amount = sum(await session.scalars(stmt))
+    
+    if commit:
+        await session.commit()
+    return amount

@@ -14,6 +14,7 @@ from sqlalchemy import (
     ForeignKey,
     ForeignKeyConstraint,
     Identity,
+    Index,
     Numeric,
     Table,
     Text,
@@ -641,6 +642,13 @@ class Transaction(Base):
     #     foreign_keys="Transaction.receiver_id"
     # )
     activity: Mapped[Activity | None] = relationship()
+
+    __table_args__ = (
+        Index(
+            'ix_transaction_user_id_activity_id',
+            'user_id', 'activity_id'
+        ),
+    )
 
 
 class Review(Base):

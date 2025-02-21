@@ -9,7 +9,7 @@ from app.core.error import (
     BadRequestException,
     NotFoundException,
 )
-from app.core.schemas import Message
+from app.core.schemas import Message, RowCount
 from app.database import SessionDep
 from app.database.models import ApmtStatus, TxnType, TxnStatus
 
@@ -90,6 +90,17 @@ async def get_received_appointments(
     )
 
 
+@router.get("/user-cancelled-count", responses=res.get_cancelled_count)
+async def get_user_cancelled_count(
+    session: SessionDep,
+    payload: UserJWTDep
+):
+    '''
+    ดูจำนวนครั้งที่ผู้ใช้ยกเลิกการนัดหมายในเดือนนี้
+    '''
+    return RowCount(count=await get_cancelled_count(session, payload.sub))
+
+
 @router.get("/{apmt_id}", responses=res.get_an_appointment)
 async def get_an_appointment(
     session: SessionDep,
@@ -111,26 +122,68 @@ async def get_an_appointment(
         raise NotFoundException("Appointment not found.")
 
 
-@router.patch("/{apmt_id}/complete", responses=res.complete_appointment)
-async def complete_appointment(
+@router.patch("/{apmt_id}/status/complete", responses=res.complete_appointment)
+async def seer_complete_appointment(
     session: SessionDep,
     payload: SeerJWTDep,
     apmt_id: int
 ):
-    await mark_appointment_completed(session, apmt_id)
+    '''
+    หมอดูจบการนัดหมาย
+    '''
+    await complete_appointment(session, apmt_id, payload.sub)
     return Message("Appointment completed.")
 
 
-@router.patch("/{apmt_id}/cancel")
-async def cancel_appointment(
+@router.patch("/{apmt_id}/status/user-cancel", responses=res.user_cancel)
+async def user_cancel_appointment(
     session: SessionDep,
     payload: UserJWTDep,
     apmt_id: int
 ):
-    raise NotImplementedError
-    # ApmtStatus = ApmtStatus.u_cancelled or s_cancelled
-    # TxnStatus = TxnStatus.cancelled
-    # Give money back to user (TxnStatus.cancelled)
+    '''
+    ผู้ใช้ยกเลิกการนัดหมาย
+
+    เงื่อนไข:
+    - ยกเลิกนัดล่วงหน้าอย่างน้อย 1 ชม.
+    - หากยกเลิกเกิน 3 ครั้งในเดือนเดียวกัน จะไม่ได้รับเงินคืน
+    '''
+    till = await time_till_appointment(session, apmt_id)
+    if till.total_seconds() < 3600:
+        raise BadRequestException(
+            "Cannot cancel within 1 hour of appointment."
+        )
+    
+    cancel = await get_cancelled_count(session, payload.sub)
+    await cancel_appointment(
+        session,
+        apmt_id,
+        ApmtStatus.u_cancelled,
+        user_id=payload.sub,
+        refund=cancel < CANCEL_QUOTA
+    )
+    return Message("Appointment cancelled.")
+
+
+@router.patch("/{apmt_id}/status/seer-cancel", responses=res.seer_cancel)
+async def seer_cancel_appointment(
+    session: SessionDep,
+    payload: SeerJWTDep,
+    apmt_id: int
+):
+    '''
+    หมอดูยกเลิกการนัดหมาย
+
+    ไม่มีเงื่อนไขในการยกเลิก
+    '''
+    await cancel_appointment(
+        session,
+        apmt_id,
+        ApmtStatus.s_cancelled,
+        seer_id=payload.sub,
+        refund=True
+    )
+    return Message("Appointment cancelled.")
 
 
 @router.get("/seer/{seer_id}", responses=res.get_seer_appointments)

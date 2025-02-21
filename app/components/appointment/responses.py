@@ -1,4 +1,4 @@
-from app.core.schemas import Message
+from app.core.schemas import RowCount
 from ..responses import *
 from .schemas import *
 
@@ -6,6 +6,14 @@ get_appointments = {
     HTTP_200_OK: {
         "model": list[AppointmentBrief],
         "description": "List of sent appointments."
+    },
+    **POSSIBLE_JWTCOOKIE_RESPONSE
+}
+
+get_cancelled_count = {
+    HTTP_200_OK: {
+        "model": RowCount,
+        "description": "Count of cancelled appointments."
     },
     **POSSIBLE_JWTCOOKIE_RESPONSE
 }
@@ -42,6 +50,56 @@ complete_appointment = {
             }
         },
         "description": "Pending appointment not found."
+    },
+    **POSSIBLE_JWTCOOKIE_RESPONSE
+}
+
+user_cancel = {
+    HTTP_200_OK: {
+        "content": {
+            "application/json": {
+                "example": {"message": "Appointment cancelled."}
+            }
+        },
+        "description": "Appointment cancelled."
+    },
+    HTTP_400_BAD_REQUEST: {
+        "content": {
+            "application/json": {
+                "example": {
+                    "detail": "Cannot cancel within 1 hour of appointment."
+                }
+            }
+        },
+        "description": "Cannot cancel within 1 hour of appointment."
+    },
+    HTTP_404_NOT_FOUND: {
+        "content": {
+            "application/json": {
+                "example": {"detail": "Appointment not found."}
+            }
+        },
+        "description": "Appointment not found."
+    },
+    **POSSIBLE_JWTCOOKIE_RESPONSE
+}
+
+seer_cancel = {
+    HTTP_200_OK: {
+        "content": {
+            "application/json": {
+                "example": {"message": "Appointment cancelled."}
+            }
+        },
+        "description": "Appointment cancelled."
+    },
+    HTTP_404_NOT_FOUND: {
+        "content": {
+            "application/json": {
+                "example": {"detail": "Appointment not found."}
+            }
+        },
+        "description": "Appointment not found."
     },
     **POSSIBLE_JWTCOOKIE_RESPONSE
 }

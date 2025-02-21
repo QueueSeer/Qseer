@@ -1,5 +1,5 @@
-from datetime import timedelta, timezone
-from sqlalchemy import asc, desc, func, insert, select, update
+from datetime import datetime, timedelta, timezone
+from sqlalchemy import asc, case, desc, func, insert, select, text, update
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,9 +14,15 @@ from app.database.models import (
     TxnStatus,
     TxnType,
 )
-from ..transaction.service import change_user_coins
+from ..transaction.service import (
+    change_user_coins,
+    cancel_activity_transactions,
+    complete_activity_transactions,
+)
 from .schemas import *
 from .time_slots import get_free_time_slots
+
+CANCEL_QUOTA = 3
 
 
 async def get_appointments(
@@ -149,9 +155,10 @@ async def create_appointment(
     return activity_id
 
 
-async def mark_appointment_completed(
+async def complete_appointment(
     session: AsyncSession,
     apmt_id: int,
+    seer_id: int = None
 ):
     # Change appointment status to completed
     stmt = (
@@ -163,6 +170,8 @@ async def mark_appointment_completed(
         values(status=ApmtStatus.completed).
         returning(Appointment.client_id, Appointment.seer_id)
     )
+    if seer_id is not None:
+        stmt = stmt.where(Appointment.seer_id == seer_id)
     try:
         client_id, seer_id = (await session.execute(stmt)).one()
     except NoResultFound:
@@ -188,3 +197,75 @@ async def mark_appointment_completed(
         TxnStatus.completed,
         apmt_id
     )
+
+
+async def get_cancelled_count(session: AsyncSession, user_id: int):
+    stmt = (
+        select(func.count()).select_from(Appointment).
+        where(
+            Appointment.client_id == user_id,
+            Appointment.status == ApmtStatus.u_cancelled,
+            Appointment.date_created >= func.date_trunc('month', func.now()),
+            Appointment.date_created < func.date_trunc(
+                'month', func.now() + text("interval '1 month'"))
+        )
+    )
+    return (await session.scalars(stmt)).one()
+
+
+async def time_till_appointment(
+    session: AsyncSession,
+    apmt_id: int
+) -> timedelta:
+    stmt = (
+        select(Appointment.start_time - func.now()).
+        where(Appointment.id == apmt_id)
+    )
+    return (await session.scalars(stmt)).one()
+
+
+async def cancel_appointment(
+    session: AsyncSession,
+    apmt_id: int,
+    cancel_status: ApmtStatus,
+    user_id: int = None,
+    seer_id: int = None,
+    refund: bool = True
+):
+    stmt = (
+        update(Appointment).
+        where(
+            Appointment.id == apmt_id,
+            Appointment.status == ApmtStatus.pending
+        ).
+        values(status=cancel_status).
+        returning(Appointment.client_id, Appointment.seer_id)
+    )
+    if user_id is not None:
+        stmt = stmt.where(Appointment.client_id == user_id)
+    if seer_id is not None:
+        stmt = stmt.where(Appointment.seer_id == seer_id)
+    try:
+        user_id, seer_id = (await session.execute(stmt)).one()
+    except NoResultFound:
+        raise NotFoundException("Pending appointment not found.")
+    
+    if refund:
+        user_coins = await cancel_activity_transactions(
+            session, user_id, apmt_id,
+            TxnType.appointment,
+            TxnStatus.hold
+        )
+    else:
+        amount = await complete_activity_transactions(
+            session, user_id, apmt_id,
+            TxnType.appointment,
+            TxnStatus.hold,
+            commit=False
+        )
+        seer_coins = await change_user_coins(
+            session, seer_id, -amount,
+            TxnType.appointment,
+            TxnStatus.completed,
+            apmt_id
+        )
