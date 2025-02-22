@@ -159,6 +159,6 @@ def set_credential_cookie(user_id, seer_id, admin_id, response: Response):
     token = create_jwt(payload)
     response.set_cookie(
         COOKIE_NAME, token, max_age=604800, path="/",
-        secure=True, httponly=True, samesite="strict"
+        secure=True, httponly=True, samesite="none"
     )
     return payload
