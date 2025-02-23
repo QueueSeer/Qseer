@@ -27,15 +27,20 @@ async def send_verify_email(email, verify_url):
     }
     path = "/api/email/send_verify_email"
     async with httpx.AsyncClient() as client:
-        response = await client.post(
-            protocal + Trigger_URL + path,
-            json=myobj,
-            headers=headers
-        )
-    if not response.is_success:
+        try:
+            response = await client.post(
+                protocal + Trigger_URL + path,
+                json=myobj,
+                headers=headers,
+                timeout=30
+            )
+            success = response.is_success
+        except httpx.TimeoutException:
+            success = False
+    if not success:
         logger.warning(f"Failed to send email to {email}")
         logger.warning(f"Url: {verify_url}")
-    return response.is_success
+    return success
 
 
 async def send_verify_seer_email(email, verify_url):
@@ -45,15 +50,20 @@ async def send_verify_seer_email(email, verify_url):
     }
     path = "/api/email/send_verify_seer_email"
     async with httpx.AsyncClient() as client:
-        response = await client.post(
-            protocal + Trigger_URL + path,
-            json=myobj,
-            headers=headers
-        )
-    if not response.is_success:
+        try:
+            response = await client.post(
+                protocal + Trigger_URL + path,
+                json=myobj,
+                headers=headers,
+                timeout=30
+            )
+            success = response.is_success
+        except httpx.TimeoutException:
+            success = False
+    if not success:
         logger.warning(f"Failed to send email to {email}")
         logger.warning(f"Url: {verify_url}")
-    return response.is_success
+    return success
 
 
 async def send_change_password(email, verify_url):
@@ -63,12 +73,17 @@ async def send_change_password(email, verify_url):
     }
     path = "/api/email/send_change_password_email"
     async with httpx.AsyncClient() as client:
-        response = await client.post(
-            protocal + Trigger_URL + path,
-            json=myobj,
-            headers=headers
-        )
-    if not response.is_success:
+        try:
+            response = await client.post(
+                protocal + Trigger_URL + path,
+                json=myobj,
+                headers=headers,
+                timeout=30
+            )
+            success = response.is_success
+        except httpx.TimeoutException:
+            success = False
+    if not success:
         logger.warning(f"Failed to send email to {email}")
         logger.warning(f"Url: {verify_url}")
-    return response.is_success
+    return success
