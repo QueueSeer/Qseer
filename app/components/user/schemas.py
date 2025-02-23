@@ -108,5 +108,4 @@ class UserUpdate(BaseModel):
     birthdate: dt.datetime | None = (
         Field(None, examples=["2002-10-03T19:00:00+07:00"])
     )
-    image: str | None = Field(None, examples=["https://example.com/image.jpg"])
     properties: dict[str, Any] | None = Field(None)

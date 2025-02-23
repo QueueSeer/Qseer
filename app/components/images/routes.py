@@ -69,7 +69,7 @@ async def upload_fortune_package_image(
     '''
     user_id = payload.sub
     part = "package/fortune"
-    file_name = str(user_id)+"-"+str(1)
+    file_name = str(user_id)+"-"+str(package_id)
 
     await ValidateFile(file)
 

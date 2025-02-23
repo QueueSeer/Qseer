@@ -79,7 +79,6 @@ class FortunePackageDraft(BaseModel):
     reading_type: str | None = Field(None, examples=["tarot"])
     category: str | None = Field(None, examples=["love"])
     required_data: list[FPRequiredData] = Field(default_factory=list)
-    image: str = ''
 
     model_config = ConfigDict(ser_json_timedelta='float')
 
