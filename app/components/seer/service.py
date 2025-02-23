@@ -188,7 +188,7 @@ async def get_day_offs(
     if end_date:
         stmt = stmt.where(DayOff.day_off <= end_date)
     if not include_past:
-        stmt = stmt.where(DayOff.day_off >= func.now())
+        stmt = stmt.where(DayOff.day_off >= func.current_date())
     if limit:
         stmt = stmt.order_by(DayOff.day_off).limit(limit).offset(offset)
     return (await session.scalars(stmt)).all()

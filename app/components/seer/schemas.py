@@ -87,8 +87,8 @@ class SeerSchedule(BaseModel):
 
 
 class SeerScheduleIn(SeerSchedule):
-    start_time: dt.time = Field(examples=['08:00:00'])
-    end_time: dt.time = Field(examples=['17:00:00'])
+    start_time: dt.time = Field(examples=['09:00:00+07:00'])
+    end_time: dt.time = Field(examples=['16:00:00+07:00'])
     day: int = Field(ge=0, le=6)
 
     @model_validator(mode='after')
@@ -110,7 +110,7 @@ class SeerScheduleIn(SeerSchedule):
 
 
 class SeerDayOff(BaseModel):
-    day: dt.date
+    day_off: dt.date
 
 
 class SeerCalendar(BaseModel):
