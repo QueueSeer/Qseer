@@ -11,7 +11,7 @@ class SeerIn(BaseModel):
 
 class SeerOut(BaseModel):
     id: int
-    username: str
+    username: str | None
     display_name: str
     first_name: str
     last_name: str

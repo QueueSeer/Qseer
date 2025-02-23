@@ -112,6 +112,8 @@ async def change_fortune_package_status(
 ):
     '''
     เปลี่ยนสถานะแพ็คเกจดูดวงเป็น `published` หรือ `hidden`
+
+    price และ duration จะต้องไม่เป็น None
     '''
     if status.status == FPStatus.draft:
         raise BadRequestException("Cannot change status to draft.")
