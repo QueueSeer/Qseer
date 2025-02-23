@@ -128,6 +128,8 @@ class Follower(BaseModel):
     display_name: str
     image: str
 
+    model_config = ConfigDict(from_attributes=True)
+
 
 class SeerFollowers(BaseModel):
     followers: list[Follower]
