@@ -6,7 +6,7 @@ from fastapi import (
     status,
     Query,
 )
-from sqlalchemy import insert, update
+from sqlalchemy import insert, text, update
 from sqlalchemy.exc import NoResultFound
 
 from app.core.config import settings
@@ -61,6 +61,44 @@ async def seer_signup(
     else:
         print(token)
     return UserId(id=seer_id)
+
+
+@router.post("/signup/resend-email")
+async def resend_seer_signup_email(
+    payload: UserJWTDep,
+    session: SessionDep,
+    request: Request,
+):
+    '''
+    ส่ง email สำหรับยืนยันเป็นหมอดูอีกรอบ สำหรับผู้ใช้งานที่ยังไม่ได้ยืนยันเป็นหมอดู
+    ส่งใหม่ได้ทุก 5 นาที
+    '''
+    stmt = (
+        update(Seer).
+        where(
+            Seer.id == payload.sub,
+            Seer.is_active == False,
+            Seer.date_created < func.now() - text("INTERVAL '5 m'")
+        ).
+        values(date_created=func.now()).
+        returning(Seer.id)
+    )
+    try:
+        seer_id = (await session.scalars(stmt)).one()
+    except NoResultFound:
+        raise BadRequestException("Email sent too soon.") 
+    token = create_jwt({"seer_confirm": seer_id}, timedelta(days=1))
+    if not settings.DEVELOPMENT:
+        success = await send_verify_seer_email(
+            await get_user_email(payload.sub, session),
+            request.url_for("seer_confirm", token=token)._url
+        )
+        if not success:
+            raise InternalException({"detail": "Failed to send email."})
+    else:
+        print(token)
+    await session.commit()
+    return Message("Email sent.")
 
 
 @router.get("/confirm/{token}", responses=res.seer_confirm)

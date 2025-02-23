@@ -114,7 +114,7 @@ async def resend_email(
             request.url_for("verify_user", token=token)._url
         )
         if not success:
-            raise InternalException("Failed to send email.")
+            raise InternalException({"detail": "Failed to send email."})
     else:
         print(token)
     await session.commit()
@@ -302,10 +302,7 @@ async def post_follow_seer(seer_id: int, payload: UserJWTDep, session: SessionDe
         values(user_id=user_id, seer_id=seer_id).
         returning(FollowSeer.c.seer_id)
     )
-    try:
-        result = (await session.scalars(stmt)).one()
-    except NoResultFound:
-        raise InternalException("Failed to follow seer.")
+    result = (await session.scalars(stmt)).one()
     await session.commit()
     return UserId(id=result)
 
