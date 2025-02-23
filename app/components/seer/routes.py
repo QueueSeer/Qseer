@@ -23,7 +23,7 @@ from app.core.security import (
 from app.core.schemas import Message, UserId, RowCount
 from app.database import SessionDep
 from app.database.models import Seer, Schedule
-from app.emails.service import send_verify_email
+from app.emails.service import send_verify_seer_email
 
 from ..user.service import get_user_email
 from . import responses as res
@@ -54,7 +54,7 @@ async def seer_signup(
     token = create_jwt({"seer_confirm": seer_id}, timedelta(days=1))
     if not settings.DEVELOPMENT:
         bg_tasks.add_task(
-            send_verify_email,
+            send_verify_seer_email,
             await get_user_email(payload.sub, session),
             request.url_for("seer_confirm", token=token)._url
         )

@@ -19,6 +19,25 @@ register = {
     }
 }
 
+resend_email = {
+    HTTP_200_OK: {
+        "content": {
+            "application/json": {
+                "example": {"message": "Email sent."}
+            }
+        },
+        "description": "Email sent."
+    },
+    HTTP_400_BAD_REQUEST: {
+        "content": {
+            "application/json": {
+                "example": {"detail": "Email sent too soon."}
+            }
+        },
+        "description": "Email sent too soon or user has been verified."
+    }
+}
+
 verify_user = {
     HTTP_200_OK: {
         "content": {

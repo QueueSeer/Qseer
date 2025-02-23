@@ -7,7 +7,7 @@ from fastapi import (
     status,
 )
 from psycopg.errors import UniqueViolation
-from sqlalchemy import delete, select, update, insert
+from sqlalchemy import delete, func, select, text, update, insert
 from sqlalchemy.exc import NoResultFound, IntegrityError
 
 from app.core.config import settings
@@ -82,6 +82,43 @@ async def register(
     else:
         print(token)
     return UserId(id=new_user.id)
+
+
+@router.post("/register/resend-email", responses=res.resend_email)
+async def resend_email(
+    user_email: UserEmail,
+    session: SessionDep,
+    request: Request
+):
+    '''
+    ส่ง email สำหรับยืนยันตัวตนอีกรอบ สำหรับผู้ใช้งานที่ยังไม่ได้ยืนยันตัวตน
+    ส่งใหม่ได้ทุก 5 นาที
+    '''
+    stmt = (
+        update(User).
+        where(
+            User.email == user_email.email,
+            User.is_active == False,
+            User.date_created < func.now() - text("INTERVAL '5 m'")
+        ).
+        values(date_created=func.now()).returning(User.id)
+    )
+    try:
+        user_id = (await session.scalars(stmt)).one()
+    except NoResultFound:
+        raise BadRequestException("Email sent too soon.")
+    token = create_jwt({"vrf": user_id}, timedelta(days=1))
+    if not settings.DEVELOPMENT:
+        success = await send_verify_email(
+            user_email.email,
+            request.url_for("verify_user", token=token)._url
+        )
+        if not success:
+            raise InternalException("Failed to send email.")
+    else:
+        print(token)
+    await session.commit()
+    return Message("Email sent.")
 
 
 @router.get("/verify/{token}", responses=res.verify_user)

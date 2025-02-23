@@ -35,6 +35,8 @@ async def send_verify_email(email, verify_url):
     if not response.is_success:
         logger.warning(f"Failed to send email to {email}")
         logger.warning(f"Url: {verify_url}")
+    return response.is_success
+
 
 async def send_verify_seer_email(email, verify_url):
     myobj = {
@@ -51,6 +53,7 @@ async def send_verify_seer_email(email, verify_url):
     if not response.is_success:
         logger.warning(f"Failed to send email to {email}")
         logger.warning(f"Url: {verify_url}")
+    return response.is_success
 
 
 async def send_change_password(email, verify_url):
@@ -68,3 +71,4 @@ async def send_change_password(email, verify_url):
     if not response.is_success:
         logger.warning(f"Failed to send email to {email}")
         logger.warning(f"Url: {verify_url}")
+    return response.is_success
