@@ -11,6 +11,7 @@ from pydantic import (
 
 from app.core.security import hash_password
 from app.core.deps import EmailLower
+from ..seer.schemas import FollowProfile
 
 
 class UserUsername(BaseModel):
@@ -109,3 +110,7 @@ class UserUpdate(BaseModel):
         Field(None, examples=["2002-10-03T19:00:00+07:00"])
     )
     properties: dict[str, Any] | None = Field(None)
+
+
+class UserFollowing(BaseModel):
+    following: list[FollowProfile]

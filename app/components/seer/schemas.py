@@ -122,9 +122,9 @@ class SeerCalendar(BaseModel):
     model_config = ConfigDict(ser_json_timedelta='float')
 
 
-class Follower(BaseModel):
+class FollowProfile(BaseModel):
     id: int
-    username: str
+    username: str | None
     display_name: str
     image: str
 
@@ -132,4 +132,4 @@ class Follower(BaseModel):
 
 
 class SeerFollowers(BaseModel):
-    followers: list[Follower]
+    followers: list[FollowProfile]

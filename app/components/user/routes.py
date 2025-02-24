@@ -3,6 +3,7 @@ from datetime import timedelta
 from fastapi import (
     APIRouter,
     BackgroundTasks,
+    Query,
     Request,
     status,
 )
@@ -39,6 +40,7 @@ from .schemas import (
     UserUsername,
     UserEmail,
     UserResetPassword,
+    UserFollowing,
 )
 from .service import create_user
 
@@ -264,6 +266,29 @@ async def set_user_username(body: UserUsername, payload: UserJWTDep, session: Se
             detail = parse_unique_violation(e.orig)
         raise IntegrityException(detail=detail)
     return body
+
+
+@router.get("/me/follow", responses=res.get_following)
+async def get_following(
+    session: SessionDep,
+    payload: UserJWTDep,
+    last_id: int = 0,
+    limit: int = Query(10, ge=1, le=100)
+):
+    '''
+    ดึงรายชื่อหมอดูที่ผู้ใช้งานติดตาม
+    '''
+    stmt = (
+        select(User.id, User.username, User.display_name, User.image).
+        join_from(FollowSeer, User, FollowSeer.c.seer_id == User.id).
+        where(
+            FollowSeer.c.user_id == payload.sub,
+            FollowSeer.c.seer_id > last_id
+        ).
+        order_by(FollowSeer.c.seer_id).limit(limit)
+    )
+    result = (await session.execute(stmt)).all()
+    return UserFollowing(following=result)
 
 
 @router.get("/me/{field}", responses=res.get_self_field)

@@ -128,6 +128,14 @@ set_user_username = {
     **POSSIBLE_JWTCOOKIE_RESPONSE
 }
 
+get_following = {
+    HTTP_200_OK: {
+        "model": UserFollowing,
+        "description": "List of following seers."
+    },
+    **POSSIBLE_JWTCOOKIE_RESPONSE
+}
+
 post_follow_seer = {
     HTTP_200_OK: {
         "model": UserId,
