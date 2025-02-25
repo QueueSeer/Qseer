@@ -3,6 +3,8 @@ import logging
 
 from app.core.config import settings
 
+from datetime import datetime, timedelta
+
 logger = logging.getLogger('uvicorn.error')
 
 Trigger_URL = settings.TRIGGER_URL
@@ -86,4 +88,25 @@ async def send_change_password(email, verify_url):
     if not success:
         logger.warning(f"Failed to send email to {email}")
         logger.warning(f"Url: {verify_url}")
+    return success
+
+async def send_appointment_email(appointment_ID : int , time_date : datetime):
+    myobj = {
+        'appointment_ID': appointment_ID,
+        'time_date': time_date
+    }
+    path = "/api/email/send_appointment_email"
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(
+                protocal + Trigger_URL + path,
+                json=myobj,
+                headers=headers,
+                timeout=30
+            )
+            success = response.is_success
+        except httpx.TimeoutException:
+            success = False
+    if not success:
+        logger.warning(f"Failed to send email (appointment_ID = {appointment_ID} )")
     return success
