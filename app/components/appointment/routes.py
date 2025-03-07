@@ -235,7 +235,7 @@ async def make_an_appointment(
     '''
     ผู้ใช้จองคิวหมอดู
     '''
-    if apmt.start_time <= datetime.now():
+    if apmt.start_time <= datetime.now(apmt.start_time.tzinfo):
         raise BadRequestException("Cannot book past appointments.")
 
     stmt = (
