@@ -11,7 +11,7 @@ from app.core.error import (
 )
 from app.core.schemas import Message, RowCount
 from app.database import SessionDep
-from app.database.models import ApmtStatus, TxnType, TxnStatus
+from app.database.models import ApmtStatus, Seer, TxnType, TxnStatus
 
 from ..transaction.service import change_user_coins
 from . import responses as res
@@ -235,12 +235,21 @@ async def make_an_appointment(
     '''
     ผู้ใช้จองคิวหมอดู
     '''
+    if apmt.start_time <= datetime.now():
+        raise BadRequestException("Cannot book past appointments.")
+
     stmt = (
         select(
+            User.display_name,
+            Seer.socials_name,
+            Seer.socials_link,
+            FortunePackage.name.label('package_name'),
             FortunePackage.duration,
             FortunePackage.price,
             FortunePackage.question_limit
         ).
+        join(User.seer).
+        join(FortunePackage, FortunePackage.seer_id == User.id).
         where(
             FortunePackage.seer_id == apmt.seer_id,
             FortunePackage.id == apmt.package_id,
@@ -258,7 +267,7 @@ async def make_an_appointment(
         raise BadRequestException("Exceeded question limit.")
     
     stmt = (
-        select(User.coins).
+        select(User.display_name).
         where(
             User.id == payload.sub,
             User.is_active == True,
@@ -266,7 +275,7 @@ async def make_an_appointment(
         )
     )
     try:
-        (await session.execute(stmt)).one()
+        user_display_name = (await session.scalars(stmt)).one()
     except NoResultFound:
         raise BadRequestException("Insufficient coins.")
     
@@ -293,6 +302,14 @@ async def make_an_appointment(
     # TODO: Set trigger to send notification
     return AppointmentCreated(
         apmt_id=apmt_id,
-        txn_id=txn_id,
-        coins=user_coins,
+        start_time=apmt.start_time,
+        code=code,
+        seer_id=apmt.seer_id,
+        seer_display_name=row.display_name,
+        seer_socials_name=row.socials_name,
+        seer_socials_link=row.socials_link,
+        package_id=apmt.package_id,
+        package_name=row.package_name,
+        user_display_name=user_display_name,
+        total=row.price,
     )

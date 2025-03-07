@@ -42,7 +42,6 @@ class PackageBrief(BaseModel):
     seer_id: int
     id: int
     name: str
-    reading_type: str | None
     category: str | None
 
     model_config = ConfigDict(from_attributes=True)
@@ -75,7 +74,7 @@ class AppointmentBrief(BaseModel):
             ),
             package=PackageBrief(
                 seer_id=obj.seer_id, id=obj.package_id,
-                name=obj.package_name
+                name=obj.package_name, category=obj.package_category
             ),
             start_time=obj.start_time,
             end_time=obj.end_time,
@@ -96,6 +95,7 @@ class AppointmentBrief(BaseModel):
                 seer_u.display_name.label('seer_display_name'),
                 FortunePackage.id.label('package_id'),
                 FortunePackage.name.label('package_name'),
+                FortunePackage.category.label('package_category'),
                 Appointment.start_time,
                 Appointment.end_time,
                 Appointment.status,
@@ -143,7 +143,7 @@ class AppointmentOut(AppointmentBrief):
             ),
             package=PackageBrief(
                 seer_id=obj.seer_id, id=obj.package_id,
-                name=obj.package_name
+                name=obj.package_name, category=obj.package_category
             ),
             start_time=obj.start_time,
             end_time=obj.end_time,
@@ -196,5 +196,13 @@ class AppointmentId(BaseModel):
 
 
 class AppointmentCreated(AppointmentId):
-    txn_id: int
-    coins: float
+    start_time: datetime
+    code: str
+    seer_id: int
+    seer_display_name: str
+    seer_socials_name: str | None
+    seer_socials_link: str | None
+    package_id: int
+    package_name: str
+    user_display_name: str
+    total: float
