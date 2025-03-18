@@ -213,7 +213,7 @@ async def get_seer_appointments(
     if (end_date - start_date).days + 1 > 90:
         raise BadRequestException("Date range must not exceed 90 days.")
     
-    return get_appointments_in_date_range(
+    return await get_appointments_in_date_range(
         session=session,
         seer_id=seer_id,
         start_date=start_date,
