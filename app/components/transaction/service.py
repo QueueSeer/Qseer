@@ -169,3 +169,53 @@ async def complete_activity_transactions(
     if commit:
         await session.commit()
     return amount
+
+async def cancel_withdraw_Transaction(
+        session: AsyncSession,
+        requester_id :int,
+        amount,
+        txn_id :int,
+        commit: bool = True,
+    ):
+    stmt = (
+        update(Transaction).
+        where(
+            Transaction.id == txn_id,
+        ).
+        values(status=TxnStatus.cancelled).
+        returning(Transaction.amount)
+    )
+    amount = sum(await session.scalars(stmt))
+    stmt = (
+        update(User).
+        where(User.id == requester_id, User.is_active == True).
+        values(coins=User.coins - amount).
+        returning(User.coins)
+    )
+    try:
+        user_coins = (await session.scalars(stmt)).one()
+    except NoResultFound:
+        raise NotFoundException("User not found.")
+    
+    if commit:
+        await session.commit()
+    return user_coins
+
+async def complete_withdraw_Transaction(
+        session: AsyncSession,
+        txn_id :int,
+        commit: bool = True,
+    ):
+    stmt = (
+        update(Transaction).
+        where(
+            Transaction.id == txn_id,
+        ).
+        values(status=TxnStatus.completed).
+        returning(Transaction.amount)
+    )
+    amount = sum(await session.scalars(stmt))
+    
+    if commit:
+        await session.commit()
+    return amount
