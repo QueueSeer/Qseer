@@ -29,7 +29,7 @@ from app.core.schemas import Message, UserId, RowCount
 from app.database import SessionDep
 from app.database.models import User, FollowSeer
 from app.database.utils import parse_unique_violation
-from app.emails import send_verify_email, send_change_password
+from app.trigger import send_verify_email, send_change_password
 from ..seer.service import check_active_seer
 from . import responses as res
 from .schemas import (

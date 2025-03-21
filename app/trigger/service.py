@@ -110,3 +110,26 @@ async def send_appointment_email(appointment_ID : int , time_date : datetime):
     if not success:
         logger.warning(f"Failed to send email (appointment_ID = {appointment_ID} )")
     return success
+
+async def trigger_auction(auction_id : int,time_date : datetime,trigger_url_part : str ,security_key :str):
+    myobj = {
+        'auction_ID': auction_id,
+        'time_date': time_date,
+        'trigger_url_part' : trigger_url_part,
+        'security_key' : security_key,
+    }
+    path = "/api/trigger/auction"
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(
+                protocal + Trigger_URL + path,
+                json=myobj,
+                headers=headers,
+                timeout=30
+            )
+            success = response.is_success
+        except httpx.TimeoutException:
+            success = False
+    if not success:
+        logger.warning(f"Failed to send trigger request (auction_id = {auction_id} )")
+    return success

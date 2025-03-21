@@ -15,7 +15,7 @@ security = HTTPBearer(bearerFormat="test", scheme_name="JWT", description="JWT T
 
 @router.get("/")
 async def test():
-    from app.emails import send_verify_email
+    from app.trigger import send_verify_email
     #await send_verify_email("wikimarurng@gmail.com","backend.qseer.app")
     return [{"test": "Test"}]
 

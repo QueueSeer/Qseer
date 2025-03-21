@@ -23,7 +23,7 @@ from app.core.security import (
 from app.core.schemas import Message, UserId, RowCount
 from app.database import SessionDep
 from app.database.models import Seer, Schedule
-from app.emails.service import send_verify_seer_email
+from app.trigger.service import send_verify_seer_email
 
 from ..user.service import get_user_email
 from . import responses as res
