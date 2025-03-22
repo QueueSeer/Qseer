@@ -106,7 +106,7 @@ async def create_appointment(
         )
     )
     try:
-        if duration is None:
+        if duration is None and package_id is not None:
             duration = (await session.scalars(stmt)).one()
     except NoResultFound:
         raise NotFoundException("Fortune package not found.")
@@ -127,14 +127,15 @@ async def create_appointment(
     else:
         end_time = end_time.astimezone(BKK)
 
-    slots = await get_free_time_slots(
-        session,
-        seer_id, package_id,
-        start_time.date(), start_time.date(),
-        duration
-    )
-    if (start_time, end_time) not in slots:
-        raise BadRequestException("Time slot not available.")
+    if package_id is not None:
+        slots = await get_free_time_slots(
+            session,
+            seer_id, package_id,
+            start_time.date(), end_time.date(),
+            duration
+        )
+        if (start_time, end_time) not in slots:
+            raise BadRequestException("Time slot not available.")
 
     stmt = insert(Activity).values(type="appointment").returning(Activity.id)
     activity_id = (await session.scalars(stmt)).one()

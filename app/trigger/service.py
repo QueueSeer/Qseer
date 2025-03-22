@@ -90,7 +90,8 @@ async def send_change_password(email, verify_url):
         logger.warning(f"Url: {verify_url}")
     return success
 
-async def send_appointment_email(appointment_ID : int , time_date : datetime):
+
+async def send_appointment_email(appointment_ID: int, time_date: datetime):
     myobj = {
         'appointment_ID': appointment_ID,
         'time_date': time_date
@@ -108,15 +109,17 @@ async def send_appointment_email(appointment_ID : int , time_date : datetime):
         except httpx.TimeoutException:
             success = False
     if not success:
-        logger.warning(f"Failed to send email (appointment_ID = {appointment_ID} )")
+        logger.warning(
+            f"Failed to send email (appointment_ID = {appointment_ID} )")
     return success
 
-async def trigger_auction(auction_id : int,time_date : datetime,trigger_url_part : str ,security_key :str):
+
+async def trigger_auction(auction_id: int, time_date: datetime, trigger_url_part: str, security_key: str):
     myobj = {
         'auction_ID': auction_id,
         'time_date': time_date,
-        'trigger_url_part' : trigger_url_part,
-        'security_key' : security_key,
+        'trigger_url_part': trigger_url_part,
+        'security_key': security_key,
     }
     path = "/api/trigger/auction"
     async with httpx.AsyncClient() as client:
@@ -131,5 +134,6 @@ async def trigger_auction(auction_id : int,time_date : datetime,trigger_url_part
         except httpx.TimeoutException:
             success = False
     if not success:
-        logger.warning(f"Failed to send trigger request (auction_id = {auction_id} )")
+        logger.warning(
+            f"Failed to send trigger request (auction_id = {auction_id} )")
     return success

@@ -4,6 +4,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select, Row
 from sqlalchemy.orm import aliased
 
+from app.core.schemas import UserBrief
 from app.database.models import (
     ApmtStatus,
     Appointment,
@@ -12,13 +13,6 @@ from app.database.models import (
     Seer,
 )
 from ..seer.package.fortune.schemas import FPRequiredData
-
-
-class UserBrief(BaseModel):
-    id: int
-    display_name: str
-
-    model_config = ConfigDict(from_attributes=True)
 
 
 class UserBriefExtra(UserBrief):
@@ -192,7 +186,7 @@ class AppointmentIn(BaseModel):
 
 
 class AppointmentId(BaseModel):
-    apmt_id: int
+    apmt_id: int | None
 
 
 class AppointmentCreated(AppointmentId):

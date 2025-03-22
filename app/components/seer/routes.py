@@ -35,6 +35,9 @@ from .service import *
 router = APIRouter(prefix="/seer", tags=["Seer"])
 
 
+# TODO: GET /search
+
+
 @router.post("/signup", responses=res.seer_signup)
 async def seer_signup(
     seer_reg: SeerIn,

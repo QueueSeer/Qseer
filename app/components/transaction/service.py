@@ -170,6 +170,7 @@ async def complete_activity_transactions(
         await session.commit()
     return amount
 
+
 async def cancel_withdraw_Transaction(
         session: AsyncSession,
         requester_id :int,
@@ -201,6 +202,7 @@ async def cancel_withdraw_Transaction(
         await session.commit()
     return user_coins
 
+
 async def complete_withdraw_Transaction(
         session: AsyncSession,
         txn_id :int,
@@ -219,3 +221,58 @@ async def complete_withdraw_Transaction(
     if commit:
         await session.commit()
     return amount
+
+
+async def cancel_bid_transactions(
+    session: AsyncSession,
+    auction_id: int,
+    user_id: int,
+    *,
+    commit: bool = True,
+):
+    return await cancel_activity_transactions(
+        session,
+        user_id,
+        auction_id,
+        TxnType.auction_bid,
+        TxnStatus.hold,
+        commit=commit
+    )
+
+
+async def complete_bid_transactions(
+    session: AsyncSession,
+    auction_id: int,
+    user_id: int,
+    appointment_id: int,
+    *,
+    commit: bool = True,
+):
+    stmt = (
+        update(Transaction).
+        where(
+            Transaction.activity_id == auction_id,
+            Transaction.user_id == user_id,
+            Transaction.type == TxnType.auction_bid,
+            Transaction.status == TxnStatus.hold
+        ).
+        values(status=TxnStatus.completed).
+        returning(Transaction.amount)
+    )
+    amount = sum(await session.scalars(stmt))
+
+    stmt = (
+        insert(Transaction).
+        values(
+            user_id=user_id,
+            activity_id=appointment_id,
+            amount=amount,
+            type=TxnType.appointment,
+            status=TxnStatus.hold
+        ).
+        returning(Transaction.id)
+    )
+    txn_id = (await session.scalars(stmt)).one()
+    if commit:
+        await session.commit()
+    return txn_id

@@ -1,4 +1,5 @@
 from datetime import date, datetime, time, timedelta
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,11 +11,19 @@ from app.core.error import NotFoundException
 from app.database.models import (
     ApmtStatus,
     Appointment,
+    AuctionInfo,
     FPStatus,
     FortunePackage,
     Seer,
     User,
 )
+
+
+class TimeRange(BaseModel):
+    start_time: datetime
+    end_time: datetime
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 async def get_appointments_in_date_range(
@@ -36,13 +45,8 @@ async def get_appointments_in_date_range(
         ).
         where(
             Appointment.seer_id == seer_id,
-            (
-                (Appointment.start_time >= start_date) &
-                (Appointment.start_time < end_date)
-            ) | (
-                (Appointment.end_time > start_date) &
-                (Appointment.end_time <= end_date)
-            )
+            Appointment.end_time > start_date,
+            Appointment.start_time < end_date
         )
     )
     if exclude_cancelled:
@@ -54,6 +58,41 @@ async def get_appointments_in_date_range(
         AppointmentPublic.model_validate(r)
         for r in (await session.execute(stmt))
     ]
+
+
+async def get_busy_time_ranges(
+    session: AsyncSession,
+    seer_id: int,
+    start_date: date | datetime,
+    end_date: date | datetime
+):
+    stmt = (
+        select(
+            AuctionInfo.appoint_start_time.label('start_time'),
+            AuctionInfo.appoint_end_time.label('end_time')
+        ).
+        where(
+            AuctionInfo.seer_id == seer_id,
+            AuctionInfo.appoint_end_time > start_date,
+            AuctionInfo.appoint_start_time < end_date
+        )
+    )
+    return [
+        TimeRange.model_validate(a)
+        for a in (await get_appointments_in_date_range(
+            session, seer_id, start_date, end_date, True
+        ))
+    ] + [
+        TimeRange.model_validate(r)
+        for r in (await session.execute(stmt))
+    ]
+
+
+def is_overlapping(
+    start1: datetime, end1: datetime,
+    start2: datetime, end2: datetime
+) -> bool:
+    return end1 > start2 and start1 < end2
 
 
 def daterange(start_date: date, end_date: date):
@@ -76,7 +115,7 @@ def non_overlapping_range(
 
 def remaining_slots(
     slot: tuple[datetime, datetime],
-    appointments: list[AppointmentPublic]
+    appointments: list[TimeRange]
 ) -> list[tuple[datetime, datetime]]:
     '''
     รับ time_slot ว่าง 1 ช่องและ list of appointments
@@ -137,8 +176,8 @@ async def get_free_time_slots(
         include_past=True
     )
 
-    appointments = await get_appointments_in_date_range(
-        session, seer_id, start_date, end_date, True
+    appointments = await get_busy_time_ranges(
+        session, seer_id, start_date, end_date
     )
 
     stmt = (

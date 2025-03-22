@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import Any
-from pydantic import BaseModel, Field, GetCoreSchemaHandler
+from pydantic import BaseModel, ConfigDict, Field, GetCoreSchemaHandler
 from pydantic_core.core_schema import (
     ValidatorFunctionWrapHandler,
     literal_schema,
@@ -39,6 +39,13 @@ class UserId(BaseModel):
 
 class RowCount(BaseModel):
     count: int
+
+
+class UserBrief(BaseModel):
+    id: int
+    display_name: str
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 def pydantic_enum_by_name[E: Enum](enum_cls: type[E]) -> type[E]:
