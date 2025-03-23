@@ -227,3 +227,9 @@ class AuctionUpdate(BaseModel):
         ):
             raise ValueError("Auction start time must be in the future")
         return self
+
+
+class AuctionCallback(BaseModel):
+    auction_ID: int
+    time_date: dt.datetime
+    security_key: str

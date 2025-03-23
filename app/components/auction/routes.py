@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
 
 from app.components.appointment.schemas import AppointmentId
@@ -229,3 +229,17 @@ async def bid_auction(
     - เสนอราคาแข่งกับตัวเองไม่ได้
     '''
     return await bidding_auction(session, payload.sub, auction_id, bid.amount)
+
+
+@router.post("/conclude")
+async def conclude_an_auction(
+    session: SessionDep,
+    obj: AuctionCallback
+):
+    '''
+    สรุปผลประมูลและสร้างการนัดหมาย Internal use
+    '''
+    if obj.security_key != settings.TRIGGER_SECRET:
+        raise HTTPException(403, "Nuh uh.")
+
+    return await conclude_auction(session, obj.auction_ID)

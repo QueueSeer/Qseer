@@ -10,8 +10,13 @@ from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.components.appointment.service import create_appointment
+from app.core.config import settings
 from app.core.deps import SortingOrder, NullLiteral
-from app.core.error import BadRequestException, NotFoundException
+from app.core.error import (
+    BadRequestException,
+    NotFoundException,
+    InternalException,
+)
 from app.components.appointment.time_slots import get_busy_time_ranges
 from app.components.transaction.service import (
     change_user_coins,
@@ -19,12 +24,14 @@ from app.components.transaction.service import (
     complete_bid_transactions,
 )
 from app.database.models import (
+    Transaction,
     TxnStatus,
     TxnType,
     User,
     AuctionInfo,
     BidInfo
 )
+from app.trigger.service import trigger_auction
 from .schemas import *
 
 
@@ -168,6 +175,20 @@ async def get_highest_bidder(
     return None
 
 
+async def set_conclude_trigger(
+    auction_id: int,
+    end_time: datetime,
+):
+    success = await trigger_auction(
+        auction_id,
+        end_time + dt.timedelta(seconds=1),
+        '/auction/conclude',
+        settings.TRIGGER_SECRET
+    )
+    if not success:
+        raise InternalException({"detail": "Trigger service failed."})
+
+
 async def create_auction(
     session: AsyncSession,
     seer_id: int,
@@ -199,6 +220,7 @@ async def create_auction(
         returning(AuctionInfo.id)
     )
     auction_id = (await session.scalars(stmt)).one()
+    await set_conclude_trigger(auction_id, data.end_time)
     await session.commit()
     return auction_id
 
@@ -240,6 +262,7 @@ async def edit_auction(
     )
     rowcount = (await session.execute(stmt)).rowcount
     await session.execute(stmt)
+    await set_conclude_trigger(auction_id, auction.end_time)
     await session.commit()
     return rowcount
 
@@ -275,20 +298,37 @@ async def conclude_auction(
                 AuctionInfo.appoint_start_time,
                 AuctionInfo.appoint_end_time
             ).
-            where(AuctionInfo.id == auction_id)
+            where(
+                AuctionInfo.id == auction_id,
+                AuctionInfo.end_time <= func.now()
+            )
         )
         try:
             row = (await session.execute(stmt)).one()
         except NoResultFound:
-            raise NotFoundException('Auction not found.')
+            raise NotFoundException('Auction not found or not ended.')
         seer_id = row.seer_id
         appoint_start_time = row.appoint_start_time
         appoint_end_time = row.appoint_end_time
 
     highest_bid = await get_highest_bidder(session, auction_id)
+
+    stmt = (
+        select(Transaction.status).
+        where(
+            Transaction.activity_id == auction_id,
+            Transaction.user_id == highest_bid.user_id,
+            Transaction.type == TxnType.auction_bid,
+            Transaction.status == TxnStatus.hold
+        )
+    )
+    hold_status = (await session.scalars(stmt)).one_or_none()
+    if hold_status is None:
+        return None
+
     apmt_id = None
     if highest_bid is not None:
-        # TODO: Set trigger to send notification
+        # TODO: Set trigger to send notification for appointment
         code = ''.join(random.choices(ascii_uppercase + digits, k=6))
         apmt_id = await create_appointment(
             session,
@@ -313,7 +353,10 @@ async def end_auction_early(
 ):
     stmt = (
         update(AuctionInfo).
-        where(AuctionInfo.id == auction_id).
+        where(
+            AuctionInfo.id == auction_id,
+            AuctionInfo.end_time > func.now()
+        ).
         values(end_time=func.now()).
         returning(
             AuctionInfo.seer_id,
