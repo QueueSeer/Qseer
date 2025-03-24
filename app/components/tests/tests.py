@@ -12,6 +12,11 @@ from app.core.config import settings
 router = APIRouter(prefix="/test", tags=["tests"])
 security = HTTPBearer(bearerFormat="test", scheme_name="JWT", description="JWT Token")
 
+from pydantic import BaseModel, Field
+from datetime import datetime
+import logging
+logger = logging.getLogger('uvicorn.error')
+
 
 @router.get("/")
 async def test():
@@ -19,10 +24,16 @@ async def test():
     #await send_verify_email("wikimarurng@gmail.com","backend.qseer.app")
     return [{"test": "Test"}]
 
-# @router.post("/upload")
-# async def upload_file(file: UploadFile = File(...)):
-#     if settings.DEVELOPMENT == False :
-#         raise HTTPException(status_code=503, detail='only available on dev server')
+class Auction_Trigger_Info(BaseModel):
+    auction_ID : int = Field( examples=[42069])
+    time_date : datetime
+    security_key : str = Field(examples=["JHAKHSD*********"])
+
+@router.post("/trigger_receiver")
+async def upload_file(ac_trigger : Auction_Trigger_Info):
+    #print(ac_trigger)
+    logger.info(ac_trigger)
+    return ["receive"]
     
 #     try:
 #         get_s3_connect().upload_fileobj(file.file, get_s3_main_Bucket(), file.filename)
