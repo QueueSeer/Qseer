@@ -2,6 +2,13 @@ from app.core.schemas import RowCount, UserId
 from ..responses import *
 from .schemas import *
 
+search_seers = {
+    HTTP_200_OK: {
+        "model": list[SeerCard],
+        "description": "List of seers."
+    }
+}
+
 seer_signup = {
     HTTP_201_CREATED: {
         "model": UserId,
@@ -150,4 +157,22 @@ seer_calendar = {
         },
         "description": "Seer does not exist."
     }
+}
+
+verify_seer = {
+    HTTP_200_OK: {
+        "model": UserId,
+        "description": "Seer verified."
+    },
+    HTTP_404_NOT_FOUND: {
+        "content": {
+            "application/json": {
+                "example": {
+                    "detail": "Seer not found or verified."
+                }
+            },
+        },
+        "description": "Seer not found or verified."
+    },
+    **POSSIBLE_JWTCOOKIE_RESPONSE
 }

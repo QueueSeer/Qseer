@@ -10,7 +10,7 @@ from sqlalchemy import insert, text, update
 from sqlalchemy.exc import NoResultFound
 
 from app.core.config import settings
-from app.core.deps import UserJWTDep, SeerJWTDep
+from app.core.deps import AdminJWTDep, SortingOrder, UserJWTDep, SeerJWTDep
 from app.core.error import (
     BadRequestException,
     NotFoundException,
@@ -35,7 +35,38 @@ from .service import *
 router = APIRouter(prefix="/seer", tags=["Seer"])
 
 
-# TODO: GET /search
+@router.get("/search", responses=res.search_seers)
+async def search_seers(
+    session: SessionDep,
+    last_id: int = None,
+    limit: int = Query(10, ge=1, le=100),
+    display_name: str = None,
+    rating: float = None,
+    is_available: bool = True,
+    direction: SortingOrder = 'asc',
+):
+    '''
+    [Public] ค้นหาหมอดู
+
+    Parameters:
+    ----------
+    - **last_id** (int, optional): สำหรับการแบ่งหน้า
+        กรอง auction_id < last_id เมื่อ direction เป็น desc
+        และ auction_id > last_id เมื่อ direction เป็น asc
+    - **limit** (int, optional): จำนวนรายการที่ต้องการ
+    - **display_name**: กรองชื่อผู้หมอดูที่ขึ้นต้นตามที่กำหนด
+    - **rating**: คะแนนขั้นต่ำที่ต้องการ
+    - **is_available**: กรองหมอดูที่พร้อมรับงาน
+    '''
+    return await searching_seers(
+        session,
+        last_id,
+        limit,
+        display_name,
+        rating,
+        is_available,
+        direction
+    )
 
 
 @router.post("/signup", responses=res.seer_signup)
@@ -295,6 +326,29 @@ async def seer_calendar(seer_id: int, session: SessionDep):
         schedules=schedules,
         day_offs=day_offs
     )
+
+
+@router_id.patch("/verify", responses=res.verify_seer)
+async def verify_seer(
+    session: SessionDep,
+    payload: AdminJWTDep,
+    seer_id: int,
+):
+    '''
+    [Admin] ยืนยันหมอดู
+    '''
+    stmt = (
+        update(Seer).
+        where(Seer.id == seer_id, Seer.verified_at == None).
+        values(verified_at=func.now()).
+        returning(Seer.id)
+    )
+    try:
+        seer_id = (await session.scalars(stmt)).one()
+    except NoResultFound:
+        raise NotFoundException("Seer not found or verified.")
+    await session.commit()
+    return UserId(id=seer_id)
 
 
 router_me.include_router(me_api)

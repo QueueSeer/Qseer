@@ -76,9 +76,9 @@ async def get_auctions(
     if seer_id is not None:
         stmt = stmt.where(AuctionInfo.seer_id == seer_id)
     if seer_display_name is not None:
-        stmt = stmt.where(User.display_name.like(f'{seer_display_name}%'))
+        stmt = stmt.where(User.display_name.ilike(f'{seer_display_name}%'))
     if name is not None:
-        stmt = stmt.where(AuctionInfo.name.like(f'{name}%'))
+        stmt = stmt.where(AuctionInfo.name.ilike(f'{name}%'))
     if exclude_ended:
         stmt = stmt.where(AuctionInfo.end_time > func.now())
     return [

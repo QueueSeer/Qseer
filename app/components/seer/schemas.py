@@ -133,3 +133,19 @@ class FollowProfile(BaseModel):
 
 class SeerFollowers(BaseModel):
     followers: list[FollowProfile]
+
+
+class SeerCard(BaseModel):
+    id: int
+    username: str | None
+    display_name: str
+    first_name: str
+    last_name: str
+    image: str
+    primary_skill: str | None
+    is_available: bool
+    verified_at: dt.datetime | None
+    rating: float | None
+    review_count: int
+
+    model_config = ConfigDict(from_attributes=True)

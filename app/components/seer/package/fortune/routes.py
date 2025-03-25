@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound
 
 from app.components.appointment.time_slots import get_free_time_slots
-from app.core.deps import SeerJWTDep
+from app.core.deps import SeerJWTDep, SortingOrder
 from app.core.error import (
     BadRequestException,
     IntegrityException,
@@ -22,9 +22,53 @@ from .service import *
 router = APIRouter(prefix="/fortune")
 
 
-# GET /search
-# Return: PackageListOut
-# TODO: Wait for comfirmation on the filter parameters
+@router.get("/search", responses=res.search_fp)
+async def search_fortune_packages(
+    session: SessionDep,
+    last_id: int = 0,
+    limit: int = Query(10, ge=1, le=100),
+    name: str = None,
+    price_min: float = None,
+    price_max: float = None,
+    duration_min: timedelta = None,
+    duration_max: timedelta = None,
+    foretell_channel: FPChannel = None,
+    reading_type: str = None,
+    category: str = None,
+    direction: SortingOrder = 'asc',
+):
+    '''
+    [Public] ค้นหาแพ็คเกจดูดวง
+
+    [วิธีการส่งค่า timedelta](https://docs.pydantic.dev/latest/api/standard_library_types/#datetimetimedelta)
+
+    Parameters:
+    ----------
+    - **last_id** (int, optional): สำหรับการแบ่งหน้า
+        กรอง id < last_id เมื่อ direction เป็น desc
+        และ id > last_id เมื่อ direction เป็น asc
+    - **limit** (int, optional): จำนวนรายการที่ต้องการ
+    - **name** (str, optional): กรองชื่อแพ็คเกจ ที่ขึ้นต้นตามที่กำหนด
+    - **price_min** (float, optional): กรองราคาต่ำสุดของแพ็คเกจ
+    - **price_max** (float, optional): กรองราคาสูงสุดของแพ็คเกจ
+    - **duration_min** (timedelta, optional): กรองระยะเวลาต่ำสุดของแพ็คเกจ
+    - **duration_max** (timedelta, optional): กรองระยะเวลาสูงสุดของแพ็คเกจ
+    - **foretell_channel** (FPChannel, optional): กรองช่องทาย
+    - **reading_type** (str, optional): กรองประเภทการอ่าน
+    - **category** (str, optional): กรองหมวดหมู่
+    - **direction** ('asc' | 'desc', optional): ทิศทางการเรียงลำดับ
+    '''
+    return await search_fpackage_cards(
+        session,
+        last_id, limit,
+        name,
+        price_min, price_max,
+        duration_min, duration_max,
+        foretell_channel,
+        reading_type,
+        category,
+        direction
+    )
 
 
 # /seer/me/package/fortune

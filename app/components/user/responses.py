@@ -159,3 +159,27 @@ delete_follow_seer = {
     },
     **POSSIBLE_JWTCOOKIE_RESPONSE
 }
+
+search_users = {
+    HTTP_200_OK: {
+        "model": list[FollowProfile],
+        "description": "List of users."
+    },
+    **POSSIBLE_JWTCOOKIE_RESPONSE
+}
+
+get_user_info = {
+    HTTP_200_OK: {
+        "model": UserOut,
+        "description": "User information."
+    },
+    HTTP_404_NOT_FOUND: {
+        "content": {
+            "application/json": {
+                "example": {"detail": "User not found."}
+            }
+        },
+        "description": "User not found."
+    },
+    **POSSIBLE_JWTCOOKIE_RESPONSE
+}

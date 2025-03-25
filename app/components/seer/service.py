@@ -4,6 +4,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import IntegrityError, ProgrammingError, OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.deps import SortingOrder
 from app.core.error import IntegrityException, InternalException
 from app.database.models import User, Seer, Schedule, DayOff, FollowSeer
 from app.database.utils import parse_unique_violation
@@ -230,3 +231,49 @@ async def delete_dayoff(day_off: dt.date, seer_id: int, session: AsyncSession):
     deleted_count = (await session.execute(stmt)).rowcount
     await session.commit()
     return deleted_count
+
+
+async def searching_seers(
+    session: AsyncSession,
+    last_id: int = None,
+    limit: int = 10,
+    display_name: str = None,
+    rating: float = None,
+    is_available: bool = True,
+    direction: SortingOrder = 'asc',
+):
+    stmt = (
+        select(
+            User.id,
+            User.username,
+            User.display_name,
+            User.first_name,
+            User.last_name,
+            User.image,
+            Seer.primary_skill,
+            Seer.is_available,
+            Seer.verified_at,
+            Seer.rating,
+            Seer.review_count,
+        ).
+        join(User.seer).
+        where(User.is_active == True)
+    )
+    if limit is not None:
+        stmt = stmt.limit(limit)
+    if last_id is not None:
+        if direction == 'asc':
+            stmt = stmt.where(User.id > last_id)
+        else:
+            stmt = stmt.where(User.id < last_id)
+    if display_name is not None:
+        stmt = stmt.where(User.display_name.ilike(f"{display_name}%"))
+    if rating is not None:
+        stmt = stmt.where(Seer.rating >= rating)
+    if is_available:
+        stmt = stmt.where(Seer.is_available == True)
+    if direction == 'asc':
+        stmt = stmt.order_by(User.id.asc())
+    else:
+        stmt = stmt.order_by(User.id.desc())
+    return [SeerCard.model_validate(s) for s in await session.execute(stmt)]

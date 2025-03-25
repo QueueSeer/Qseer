@@ -11,8 +11,9 @@ from psycopg.errors import UniqueViolation
 from sqlalchemy import delete, func, select, text, update, insert
 from sqlalchemy.exc import NoResultFound, IntegrityError
 
+from app.components.seer.schemas import FollowProfile
 from app.core.config import settings
-from app.core.deps import UserJWTDep
+from app.core.deps import AdminJWTDep, SortingOrder, UserJWTDep
 from app.core.error import (
     BadRequestException,
     NotFoundException,
@@ -350,15 +351,61 @@ async def delete_follow_seer(seer_id: int, payload: UserJWTDep, session: Session
     return RowCount(count=count)
 
 
-@router.post("/delete")
-async def delete_user(id: int = None, session: SessionDep = None):
+@router.get("/search", responses=res.search_users)
+async def search_users(
+    session: SessionDep,
+    payload: AdminJWTDep,
+    last_id: int = None,
+    limit: int = Query(10, ge=1, le=100),
+    display_name: str = None,
+    direction: SortingOrder = 'asc',
+):
     '''
-    For testing purpose only.
+    [Admin] ดูรายชื่อผู้ใช้
+
+    Parameters:
+    ----------
+    - **last_id** (int, optional): สำหรับการแบ่งหน้า
+        กรอง user_id < last_id เมื่อ direction เป็น desc
+        และ user_id > last_id เมื่อ direction เป็น asc
+    - **limit** (int, optional): จำนวนรายการที่ต้องการ
+    - **display_name** (str, optional): กรองชื่อผู้ใช้ที่ขึ้นต้นตามที่กำหนด
+    - **direction** ('asc' | 'desc', optional): ทิศทางการเรียงลำดับ
     '''
-    stmt = delete(User)
-    if id is not None:
-        stmt = stmt.where(User.id == id)
-    stmt = stmt.returning(User.id)
-    result = await session.execute(stmt)
-    await session.commit()
-    return {"statement": str(stmt), "result": result.scalars().all()}
+    stmt = (
+        select(User.id, User.username, User.display_name, User.image).
+        where(User.is_active == True)
+    )
+    if limit is not None:
+        stmt = stmt.limit(limit)
+    if last_id is not None:
+        if direction == 'asc':
+            stmt = stmt.where(User.id > last_id)
+        else:
+            stmt = stmt.where(User.id < last_id)
+    if display_name is not None:
+        stmt = stmt.where(User.display_name.ilike(f"{display_name}%"))
+    if direction == 'asc':
+        stmt = stmt.order_by(User.id.asc())
+    else:
+        stmt = stmt.order_by(User.id.desc())
+    return [FollowProfile.model_validate(u) for u in await session.execute(stmt)]
+
+
+@router.get("/{user_id}", responses=res.get_user_info)
+async def get_user_info(
+    session: SessionDep,
+    payload: AdminJWTDep,
+    user_id: int,
+):
+    '''
+    [Admin] ดึงข้อมูลของผู้ใช้งาน
+    '''
+    try:
+        user = (await session.scalars(
+            select(User).
+            where(User.id == user_id, User.is_active == True)
+        )).one()
+    except NoResultFound:
+        raise NotFoundException("User not found.")
+    return UserOut.model_validate(user)

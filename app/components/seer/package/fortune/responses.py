@@ -3,6 +3,13 @@ from app.components.responses import *
 from app.core.schemas import RowCount
 from .schemas import *
 
+search_fp = {
+    HTTP_200_OK: {
+        "model": PackageListOut,
+        "description": "List of fortune packages."
+    }
+}
+
 get_self_fortune_package_cards = {
     HTTP_200_OK: {
         "model": PackageListOut,
