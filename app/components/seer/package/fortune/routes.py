@@ -84,7 +84,7 @@ async def get_self_fortune_package_cards(
     limit: int = Query(10, ge=1, le=100)
 ):
     '''
-    ดูรายการแพ็คเกจดูดวงของตัวเอง
+    [Seer] ดูรายการแพ็คเกจดูดวงของตัวเอง
     '''
     return await get_fpackage_cards(
         session, payload.sub,
@@ -99,7 +99,7 @@ async def draft_fortune_package(
     fortune: FortunePackageDraft
 ):
     '''
-    สร้างแพ็คเกจดูดวงที่มีสถานะเป็น draft
+    [Seer] สร้างแพ็คเกจดูดวงที่มีสถานะเป็น draft
 
     - **name**: ชื่อแพ็คเกจ ค่าที่จำเป็น
     - **duration**: [วิธีการส่งค่า timedelta](https://docs.pydantic.dev/latest/api/standard_library_types/#datetimetimedelta)
@@ -119,7 +119,7 @@ async def get_self_fortune_package(
     package_id: int
 ):
     '''
-    ดูรายละเอียดแพ็คเกจดูดวงของตัวเอง
+    [Seer] ดูรายละเอียดแพ็คเกจดูดวงของตัวเอง
     '''
     try:
         return FortunePackageOut.model_validate(
@@ -137,7 +137,7 @@ async def edit_draft_fortune_package(
     fortune: FortunePackageEdit
 ):
     '''
-    แก้ไขแพ็คเกจดูดวงที่มีสถานะเป็น draft
+    [Seer] แก้ไขแพ็คเกจดูดวงที่มีสถานะเป็น draft
     '''
     count = await update_draft_fpackage(
         session, payload.sub, package_id, fortune
@@ -155,7 +155,7 @@ async def change_fortune_package_status(
     status: FPStatusChange
 ):
     '''
-    เปลี่ยนสถานะแพ็คเกจดูดวงเป็น `published` หรือ `hidden`
+    [Seer] เปลี่ยนสถานะแพ็คเกจดูดวงเป็น `published` หรือ `hidden`
 
     price และ duration จะต้องไม่เป็น None
     '''
@@ -197,7 +197,7 @@ async def delete_self_fortune_package(
     package_id: int
 ):
     '''
-    ลบแพ็คเกจดูดวงของตัวเอง
+    [Seer] ลบแพ็คเกจดูดวงของตัวเอง
     '''
     count = await delete_fpackage(session, payload.sub, package_id)
     return RowCount(count=count)
@@ -215,7 +215,7 @@ async def get_seer_fortune_package_cards(
     limit: int = Query(10, ge=1, le=100)
 ):
     '''
-    ดูรายการแพ็คเกจดูดวงของหมอดู
+    [Public] ดูรายการแพ็คเกจดูดวงของหมอดู
     '''
     return await get_fpackage_cards(
         session, seer_id,
@@ -230,7 +230,7 @@ async def get_seer_fortune_package(
     package_id: int
 ):
     '''
-    ดูรายละเอียดแพ็คเกจดูดวงของหมอดู
+    [Public] ดูรายละเอียดแพ็คเกจดูดวงของหมอดู
     '''
     try:
         return FortunePackageOut.model_validate(
@@ -252,7 +252,7 @@ async def get_seer_fortune_package_time_slots(
     end_date: date = None,
 ):
     '''
-    ดูรายการเวลาที่หมอดูว่างสำหรับแพ็คเกจดูดวง
+    [Public] ดูรายการเวลาที่หมอดูว่างสำหรับแพ็คเกจดูดวง
     ในช่วงระหว่างวันที่ `start_date` ถึง `end_date` (inclusive)
     '''
     if start_date is None and end_date is None:

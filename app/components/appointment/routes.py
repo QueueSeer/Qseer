@@ -67,7 +67,7 @@ async def get_received_appointments(
     direction: SortingOrder = 'desc'
 ):
     '''
-    ดูรายการนัดหมายที่เราเป็นคนถูกจอง (ฝั่งหมอดู)
+    [Seer] ดูรายการนัดหมายที่เราเป็นคนถูกจอง (ฝั่งหมอดู)
 
     Parameters:
     ----------

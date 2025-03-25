@@ -78,7 +78,7 @@ async def seer_signup(
     bg_tasks: BackgroundTasks
 ):
     '''
-    สมัครเป็นหมอดู
+    [User] สมัครเป็นหมอดู
 
     - **experience**: ไม่บังคับ เป็นวันที่ เพื่อบอกประสบการณ์การดูดวง
     - **description**: ไม่บังคับ คำอธิบาย แนะนำตัว
@@ -104,7 +104,7 @@ async def resend_seer_signup_email(
     request: Request,
 ):
     '''
-    ส่ง email สำหรับยืนยันเป็นหมอดูอีกรอบ สำหรับผู้ใช้งานที่ยังไม่ได้ยืนยันเป็นหมอดู
+    [User] ส่ง email สำหรับยืนยันเป็นหมอดูอีกรอบ สำหรับผู้ใช้งานที่ยังไม่ได้ยืนยันเป็นหมอดู
     ส่งใหม่ได้ทุก 5 นาที
     '''
     stmt = (
@@ -161,7 +161,7 @@ router_me = APIRouter(prefix="/me", tags=["Seer Me"])
 @router_me.get("", responses=res.get_seer_me)
 async def get_seer_me(payload: SeerJWTDep, session: SessionDep):
     '''
-    ดูข้อมูลหมอดูตัวเอง
+    [Seer] ดูข้อมูลหมอดูตัวเอง
     '''
     try:
         return await get_self_seer(session, payload.sub)
@@ -176,7 +176,7 @@ async def update_seer_me(
     session: SessionDep
 ):
     '''
-    แก้ไขข้อมูลหมอดูตัวเอง ส่งแค่ข้อมูลที่ต้องการแก้ไข
+    [Seer] แก้ไขข้อมูลหมอดูตัวเอง ส่งแค่ข้อมูลที่ต้องการแก้ไข
     '''
     rowcount = await update_seer(session, payload.sub, seer_update)
     if rowcount == 0:
@@ -190,7 +190,7 @@ async def edit_seer_schedule(
     session: SessionDep
 ):
     '''
-    แก้ไขตารางเวลาหมอดู
+    [Seer] แก้ไขตารางเวลาหมอดู
 
     Details:
     - ถ้ามีตารางเวลาที่อยู่ติดกันหรือซ้อนทับกัน จะถือว่าเป็นตารางเวลาเดียวกัน
@@ -244,7 +244,7 @@ async def edit_seer_schedule(
 @router_me.post("/dayoff", status_code=201, responses=res.seer_dayoff)
 async def add_seer_dayoff(day_off: SeerDayOff, payload: SeerJWTDep, session: SessionDep):
     '''
-    เพิ่มวันหยุดหมอดู ถ้าเพิ่มวันหยุดที่มีอยู่แล้วจะไม่เกิดอะไรขึ้น
+    [Seer] เพิ่มวันหยุดหมอดู ถ้าเพิ่มวันหยุดที่มีอยู่แล้วจะไม่เกิดอะไรขึ้น
     '''
     return await add_dayoff(day_off, payload.sub, session)
 
@@ -252,7 +252,7 @@ async def add_seer_dayoff(day_off: SeerDayOff, payload: SeerJWTDep, session: Ses
 @router_me.delete("/dayoff/{day_off}")
 async def delete_seer_dayoff(day_off: dt.date, payload: SeerJWTDep, session: SessionDep):
     '''
-    ลบวันหยุดหมอดู
+    [Seer] ลบวันหยุดหมอดู
     '''
     count = await delete_dayoff(day_off, payload.sub, session)
     return RowCount(count=count)
@@ -264,7 +264,7 @@ router_id = APIRouter(prefix="/{seer_id}", tags=["Seer Id"])
 @router_id.get("", responses=res.seer_info)
 async def seer_info(seer_id: int, session: SessionDep):
     '''
-    ดูข้อมูลหมอดู
+    [Public] ดูข้อมูลหมอดู
     '''
     try:
         return await get_seer_info(session, seer_id)
@@ -280,7 +280,7 @@ async def seer_followers(
     limit: int = Query(10, ge=1, le=1000)
 ):
     '''
-    ดูรายชื่อผู้ติดตามหมอดู (ไม่ได้ตรวจสอบค่า is_active ของผู้ติดตาม)
+    [Public] ดูรายชื่อผู้ติดตามหมอดู (ไม่ได้ตรวจสอบค่า is_active ของผู้ติดตาม)
 
     Parameters:
     - **last_id**: ไม่บังคับ กรองผู้ติดตามที่มี id มากกว่า last_id
@@ -292,7 +292,7 @@ async def seer_followers(
 @router_id.get("/total_followers", responses=res.seer_total_followers)
 async def seer_total_followers(seer_id: int, session: SessionDep):
     '''
-    ดูจำนวนผู้ติดตามหมอดู (ไม่ได้ตรวจสอบค่า is_active ของผู้ติดตาม)
+    [Public] ดูจำนวนผู้ติดตามหมอดู (ไม่ได้ตรวจสอบค่า is_active ของผู้ติดตาม)
     '''
     return RowCount(count=await get_seer_total_followers(session, seer_id))
 
@@ -300,7 +300,7 @@ async def seer_total_followers(seer_id: int, session: SessionDep):
 @router_id.get("/calendar", responses=res.seer_calendar)
 async def seer_calendar(seer_id: int, session: SessionDep):
     '''
-    ดูข้อมูลตารางเวลารายสัปดาห์และวันหยุดของหมอดู
+    [Public] ดูข้อมูลตารางเวลารายสัปดาห์และวันหยุดของหมอดู
     วันหยุดที่ส่งกลับมาจะไม่มีวันหยุดในอดีต และมีไม่เกิน 90 วัน
 
     day ภายใน schedules คือเลข 0-6 แทนวันจันทร์-อาทิตย์

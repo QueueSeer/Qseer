@@ -210,7 +210,7 @@ async def close_an_auction(
     '''
     apmt_id = await end_auction_early(session, auction_id, payload.sub)
     return AppointmentId(apmt_id=apmt_id)
-    
+
 
 @router.put("/{auction_id}/bid", responses=res.bid_auction)
 async def bid_auction(
