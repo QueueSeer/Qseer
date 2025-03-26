@@ -1,6 +1,6 @@
 import datetime as dt
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import func, select, Row
+from sqlalchemy import Row
 
 from app.core.schemas import UserBrief
 

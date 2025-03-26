@@ -1,11 +1,10 @@
 from enum import Enum
 from psycopg.errors import UniqueViolation
-from sqlalchemy import asc, delete, desc, exists, func, insert, select, update
+from sqlalchemy import asc, delete, desc, insert, select
 from sqlalchemy.exc import NoResultFound, IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
-from app.components.appointment.service import create_appointment
 from app.core.deps import SortingOrder
 from app.core.error import (
     BadRequestException,
