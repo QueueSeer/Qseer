@@ -83,6 +83,7 @@ async def search_fpackage_cards(
     foretell_channel: FPChannel = None,
     reading_type: str = None,
     category: str = None,
+    status: FPStatus = None,
     direction: SortingOrder = 'asc',
 ):
     order = asc if direction == 'asc' else desc
@@ -137,7 +138,9 @@ async def search_fpackage_cards(
         stmt = stmt.where(FortunePackage.reading_type == reading_type)
     if category is not None:
         stmt = stmt.where(FortunePackage.category == category)
-    
+    if status is not None:
+        stmt = stmt.where(FortunePackage.status == status)
+        
     return PackageListOut(packages=(await session.execute(stmt)).all())
 
 

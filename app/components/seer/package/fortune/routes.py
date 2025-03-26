@@ -67,6 +67,7 @@ async def search_fortune_packages(
         foretell_channel,
         reading_type,
         category,
+        FPStatus.published,
         direction
     )
 
