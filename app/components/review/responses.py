@@ -59,5 +59,13 @@ remove_review = {
         "model": RowCount,
         "description": "Review removed",
     },
+    HTTP_404_NOT_FOUND: {
+        "content": {
+            "application/json": {
+                "example": {"detail": "Review not found."}
+            }
+        },
+        "description": "Review not found.",
+    },
     **POSSIBLE_JWTCOOKIE_RESPONSE
 }

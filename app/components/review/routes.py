@@ -184,6 +184,7 @@ async def review_service(
     - รีวิวซ้ำไม่ได้
     - ต้องรีวิว appointment ตัวเอง
     - appointment ต้องจบแล้ว
+    - คะแนนหมอดูจะแสดงเมื่อถึง 10 รีวิว
 
     Parameters:
     ----------

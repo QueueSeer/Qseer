@@ -1,6 +1,6 @@
 from enum import Enum
 from psycopg.errors import UniqueViolation
-from sqlalchemy import asc, delete, desc, insert, select
+from sqlalchemy import asc, delete, desc, func, insert, select, update
 from sqlalchemy.exc import NoResultFound, IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
@@ -16,6 +16,7 @@ from app.database.models import (
     Appointment,
     FortunePackage,
     Review,
+    Seer,
     User,
 )
 from .schemas import *
@@ -87,6 +88,61 @@ async def get_reviews(
     return [ReviewOut.create_from(row) for row in result]
 
 
+async def update_seer_rating(
+    session: AsyncSession,
+    seer_id: int,
+    *,
+    add: bool = True,
+    commit: bool = False
+):
+    CAL_AT = 10
+    stmt = (
+        select(Seer.rating, Seer.review_count).
+        where(Seer.id == seer_id)
+    )
+    try:
+        rating, review_count = (await session.execute(stmt)).one()._tuple()
+    except NoResultFound:
+        raise NotFoundException("Seer not found.")
+
+    sel_stmt = (
+        select(
+            func.avg(Review.score).label('rating'),
+            func.count(Review.id).label('review_count')
+        ).
+        join(Appointment, Review.id == Appointment.id).
+        where(Appointment.seer_id == seer_id).
+        alias('review_stats')
+    )
+
+    if add:
+        if review_count + 1 < CAL_AT and rating is None:
+            rating_change = None
+            count_change = Seer.review_count + 1
+        else:
+            rating_change = sel_stmt.c.rating
+            count_change = sel_stmt.c.review_count
+    else:
+        if review_count - 1 < CAL_AT:
+            rating_change = None
+            count_change = Seer.review_count - 1
+        else:
+            rating_change = sel_stmt.c.rating
+            count_change = sel_stmt.c.review_count
+
+    stmt = (
+        update(Seer).
+        where(Seer.id == seer_id).
+        values(
+            rating=rating_change,
+            review_count=count_change
+        )
+    )
+    await session.execute(stmt)
+    if commit:
+        await session.commit()
+
+
 async def create_review(
     session: AsyncSession,
     data: ReviewCreate,
@@ -95,11 +151,16 @@ async def create_review(
 ):
     if user_id is not None:
         stmt = (
-            select(Appointment.client_id, Appointment.status).
+            select(
+                Appointment.client_id,
+                Appointment.status,
+                Appointment.seer_id
+            ).
             where(Appointment.id == data.id)
         )
         try:
-            client_id, status = (await session.execute(stmt)).one()._tuple()
+            row = (await session.execute(stmt)).one()._tuple()
+            client_id, status, seer_id = row
         except NoResultFound:
             raise NotFoundException("Appointment not found.")
         if client_id != user_id:
@@ -121,6 +182,8 @@ async def create_review(
         if isinstance(e.orig, UniqueViolation):
             raise BadRequestException("Already reviewed.")
         raise InternalException(str(e.orig))
+
+    await update_seer_rating(session, seer_id)
     await session.commit()
 
 
@@ -133,5 +196,16 @@ async def delete_review(
         where(Review.id == review_id)
     )
     rowcount = (await session.execute(stmt)).rowcount
+    if rowcount == 0:
+        raise NotFoundException("Review not found.")
+    stmt = (
+        select(Appointment.seer_id).
+        where(Appointment.id == review_id)
+    )
+    try:
+        seer_id = (await session.scalars(stmt)).one()
+    except NoResultFound:
+        raise NotFoundException("Appointment not found.")
+    await update_seer_rating(session, seer_id, add=False)
     await session.commit()
     return rowcount
