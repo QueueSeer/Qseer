@@ -76,11 +76,13 @@ async def register(
     """
     new_user = await create_user(session, User(**user.model_dump()))
     token = create_jwt({"vrf": new_user.id}, timedelta(days=1))
+    url = "https://qseer.app/verify?token=" + token
     if not settings.DEVELOPMENT:
         bg_tasks.add_task(
             send_verify_email,
             user.email,
-            request.url_for("verify_user", token=token)._url
+            #request.url_for("verify_user", token=token)._url
+            url
         )
     else:
         print(token)
@@ -111,10 +113,12 @@ async def resend_email(
     except NoResultFound:
         raise BadRequestException("Email sent too soon.")
     token = create_jwt({"vrf": user_id}, timedelta(days=1))
+    url = "https://qseer.app/verify?token=" + token
     if not settings.DEVELOPMENT:
         success = await send_verify_email(
             user_email.email,
-            request.url_for("verify_user", token=token)._url
+            #request.url_for("verify_user", token=token)._url
+            url
         )
         if not success:
             raise InternalException({"detail": "Failed to send email."})
@@ -168,15 +172,22 @@ async def change_password(
         print("----------------Token------------------")
         print(token)
         print("---------------------------------------")
-        # bg_tasks.add_task(
-        # send_change_password,
-        # user_email.email,
-        # request.url_for("verify_user", token=token)._url
-        # )
+        url = "https://qseer.app/reset-password?token="+token
+        bg_tasks.add_task(
+        send_change_password,
+        user_email.email,
+        url
+        )
     else:
         print("----------------Token------------------")
         print(token)
         print("---------------------------------------")
+        # url = "https://qseer.app/reset-password?token="+token
+        # bg_tasks.add_task(
+        # send_change_password,
+        # user_email.email,
+        # url
+        # )
     return Message("Password reset email sent.")
 
 
