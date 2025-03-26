@@ -93,6 +93,43 @@ async def upload_fortune_package_image(
     await session.commit()
     return {"url": local_url}
 
+@router.post("/auction/{auction_id}")
+async def upload_fortune_package_image(
+    payload: UserJWTDep,
+    session: SessionDep,
+    auction_id: int,
+    file: UploadFile = File(...)
+):
+    '''
+    upload รูป fortune package
+    (PNG or JPG) (Size < 10MB)
+    '''
+    user_id = payload.sub
+    part = "auction_id"
+    file_name = str(user_id)+"-"+str(auction_id)
+
+    await ValidateFile(file)
+
+    local_url = CreateUrl(part, file_name)
+    stmt = (
+        update(AuctionInfo).
+        where(AuctionInfo.id == auction_id,
+              AuctionInfo.seer_id == user_id,
+              ).
+        values(image=local_url).
+        returning(AuctionInfo.id)
+    )
+
+    result = (await session.execute(stmt)).one_or_none()
+    if result is None:
+        raise NotFoundException("Auction not found.")
+
+    if not await UploadImage(part, file_name, file):
+        raise InternalException('Fail To Upload')
+
+    await session.commit()
+    return {"url": local_url}
+
 
 @router.post("/package/question")
 async def upload_question_package_image(payload: UserJWTDep, session: SessionDep, file: UploadFile = File(...)):
