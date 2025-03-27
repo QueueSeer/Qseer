@@ -156,6 +156,10 @@ async def create_an_auction(
     เงื่อนไข:
     - `start_time` < `end_time` < `appoint_start_time` < `appoint_end_time`
     - เวลา appoint ต้องไม่ชนกับเวลาที่มีการนัดหมายอยู่แล้ว
+
+    Note:
+    - `start_time` สามารถใส่เป็น 'now' เพื่อให้ระบบใช้เวลาปัจจุบัน
+    - ระบบจะแปลง timeezone ให้เป็น UTC+7 การใส่เวลาต่อท้ายด้วย z จะถือว่าเป็น UTC+0
     '''
     auction_id = await create_auction(session, payload.sub, auction)
     return AuctionCreated.model_validate(
@@ -177,6 +181,10 @@ async def update_auction(
     - `start_time` < `end_time` < `appoint_start_time` < `appoint_end_time`
     - เวลา appoint ต้องไม่ชนกับเวลาที่มีการนัดหมายอยู่แล้ว
     - แก้ไขได้เฉพาะตอนประมูลยังไม่เริ่ม
+
+    Note:
+    - `start_time` สามารถใส่เป็น 'now' เพื่อให้ระบบใช้เวลาปัจจุบัน
+    - ระบบจะแปลง timeezone ให้เป็น UTC+7 การใส่เวลาต่อท้ายด้วย z จะถือว่าเป็น UTC+0
     '''
     await edit_auction(session, auction_id, payload.sub, auction)
     return auction.model_dump(exclude_unset=True)

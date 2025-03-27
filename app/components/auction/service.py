@@ -24,6 +24,7 @@ from app.components.transaction.service import (
     complete_bid_transactions,
 )
 from app.database.models import (
+    Activity,
     Transaction,
     TxnStatus,
     TxnType,
@@ -203,9 +204,12 @@ async def create_auction(
     if busy:
         raise BadRequestException("Seer is busy at this time.")
 
+    stmt = insert(Activity).values(type="auctionInfo").returning(Activity.id)
+    activity_id = (await session.scalars(stmt)).one()
     stmt = (
         insert(AuctionInfo).
         values(
+            id=activity_id,
             seer_id=seer_id,
             name=data.name,
             short_description=data.short_description,
