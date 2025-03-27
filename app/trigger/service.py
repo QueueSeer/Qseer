@@ -117,7 +117,7 @@ async def send_appointment_email(appointment_ID: int, time_date: datetime):
 async def trigger_auction(auction_id: int, time_date: datetime, trigger_url_part: str, security_key: str):
     myobj = {
         'auction_ID': auction_id,
-        'time_date': time_date,
+        'time_date': time_date.isoformat(),
         'trigger_url_part': trigger_url_part,
         'security_key': security_key,
     }
