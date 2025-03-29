@@ -26,6 +26,7 @@ class AuctionCard(BaseModel):
                 AuctionInfo.id,
                 AuctionInfo.seer_id,
                 User.display_name.label('seer_display_name'),
+                User.image.label('seer_image'),
                 AuctionInfo.name,
                 AuctionInfo.short_description,
                 AuctionInfo.image,
@@ -43,7 +44,8 @@ class AuctionCard(BaseModel):
         return cls(
             id=obj.id,
             seer=UserBrief(
-                id=obj.seer_id, display_name=obj.seer_display_name
+                id=obj.seer_id, display_name=obj.seer_display_name,
+                image=obj.seer_image
             ),
             name=obj.name,
             short_description=obj.short_description,
@@ -76,6 +78,7 @@ class AuctionDetail(AuctionCard):
                 AuctionInfo.id,
                 AuctionInfo.seer_id,
                 User.display_name.label('seer_display_name'),
+                User.image.label('seer_image'),
                 AuctionInfo.name,
                 AuctionInfo.short_description,
                 AuctionInfo.description,
@@ -97,7 +100,8 @@ class AuctionDetail(AuctionCard):
         return cls(
             id=obj.id,
             seer=UserBrief(
-                id=obj.seer_id, display_name=obj.seer_display_name
+                id=obj.seer_id, display_name=obj.seer_display_name,
+                image=obj.seer_image
             ),
             name=obj.name,
             short_description=obj.short_description,

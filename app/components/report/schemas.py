@@ -37,6 +37,7 @@ class ReportOut(BaseModel):
                 Report.id,
                 User.id.label("reporter_id"),
                 User.display_name.label("reporter_display_name"),
+                User.image.label("reporter_image"),
                 Review.id.label("review_id"),
                 Review.score.label("review_score"),
                 Review.text.label("review_text"),
@@ -54,7 +55,8 @@ class ReportOut(BaseModel):
             id=obj.id,
             reporter=UserBrief(
                 id=obj.reporter_id,
-                display_name=obj.reporter_display_name
+                display_name=obj.reporter_display_name,
+                image=obj.reporter_image
             ),
             review=ReviewBrief(
                 id=obj.review_id,

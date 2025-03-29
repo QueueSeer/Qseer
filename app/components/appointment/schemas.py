@@ -61,10 +61,12 @@ class AppointmentBrief(BaseModel):
         return cls(
             id=obj.id,
             client=UserBrief(
-                id=obj.client_id, display_name=obj.client_display_name
+                id=obj.client_id, display_name=obj.client_display_name,
+                image=obj.client_image
             ),
             seer=UserBrief(
-                id=obj.seer_id, display_name=obj.seer_display_name
+                id=obj.seer_id, display_name=obj.seer_display_name,
+                image=obj.seer_image
             ),
             package=PackageBrief(
                 seer_id=obj.seer_id, id=obj.package_id,
@@ -85,8 +87,10 @@ class AppointmentBrief(BaseModel):
                 Appointment.id,
                 client.id.label('client_id'),
                 client.display_name.label('client_display_name'),
+                client.image.label('client_image'),
                 Seer.id.label('seer_id'),
                 seer_u.display_name.label('seer_display_name'),
+                seer_u.image.label('seer_image'),
                 FortunePackage.id.label('package_id'),
                 FortunePackage.name.label('package_name'),
                 FortunePackage.category.label('package_category'),
@@ -126,11 +130,13 @@ class AppointmentOut(AppointmentBrief):
             id=obj.id,
             client=UserBriefExtra(
                 id=obj.client_id, display_name=obj.client_display_name,
+                image=obj.client_image,
                 required=required_info
             ),
             seer=SeerBrief(
                 id=obj.seer_id,
                 display_name=obj.seer_display_name,
+                image=obj.seer_image,
                 name=obj.seer_name,
                 socials_name=obj.socials_name,
                 socials_link=obj.socials_link

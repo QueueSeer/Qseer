@@ -34,10 +34,12 @@ class ReviewOut(BaseModel):
         return cls(
             id=obj.id,
             seer=UserBrief(
-                id=obj.seer_id, display_name=obj.seer_display_name
+                id=obj.seer_id, display_name=obj.seer_display_name,
+                image=obj.seer_image
             ),
             client=UserBrief(
-                id=obj.client_id, display_name=obj.client_display_name
+                id=obj.client_id, display_name=obj.client_display_name,
+                image=obj.client_image
             ),
             package=PackageBrief(
                 id=obj.package_id, name=obj.package_name

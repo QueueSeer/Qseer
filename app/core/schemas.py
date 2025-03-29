@@ -44,6 +44,7 @@ class RowCount(BaseModel):
 class UserBrief(BaseModel):
     id: int
     display_name: str
+    image: str = None
 
     model_config = ConfigDict(from_attributes=True)
 
