@@ -274,6 +274,7 @@ async def edit_auction(
 async def cancel_auction(
     session: AsyncSession,
     auction_id: int,
+    seer_id: int = None
 ):
     stmt = (
         delete(AuctionInfo).
@@ -282,6 +283,8 @@ async def cancel_auction(
             AuctionInfo.start_time > func.now()
         )
     )
+    if seer_id is not None:
+        stmt = stmt.where(AuctionInfo.seer_id == seer_id)
     rowcount = (await session.execute(stmt)).rowcount
     await session.commit()
     return rowcount
