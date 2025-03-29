@@ -149,6 +149,14 @@ post_follow_seer = {
         },
         "description": "Seer not found."
     },
+    HTTP_409_CONFLICT: {
+        "content": {
+            "application/json": {
+                "example": {"detail": "Already following."}
+            }
+        },
+        "description": "Already following."
+    },
     **POSSIBLE_JWTCOOKIE_RESPONSE
 }
 

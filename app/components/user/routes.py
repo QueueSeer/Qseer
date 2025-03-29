@@ -339,7 +339,12 @@ async def post_follow_seer(seer_id: int, payload: UserJWTDep, session: SessionDe
         values(user_id=user_id, seer_id=seer_id).
         returning(FollowSeer.c.seer_id)
     )
-    result = (await session.scalars(stmt)).one()
+    try:
+        result = (await session.scalars(stmt)).one()
+    except IntegrityError as e:
+        if isinstance(e.orig, UniqueViolation):
+            raise IntegrityException(detail={"detail": "Already following."})
+        raise InternalException({"detail": "Unknown error."})
     await session.commit()
     return UserId(id=result)
 
