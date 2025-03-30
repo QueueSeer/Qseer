@@ -35,8 +35,7 @@ review_service = {
         "content": {
             "application/json": {
                 "example": {
-                    "detail": "Not client or\
-                        Appointment not ended or Already reviewed."
+                    "detail": "Not client or Appointment not ended or Already reviewed."
                     }
             }
         },
