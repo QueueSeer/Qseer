@@ -124,7 +124,9 @@ async def get_auction_by_id_with_status(
 async def get_auction_bidder(
     session: AsyncSession,
     auction_id: int,
-    limit: int = 10
+    limit: int = 10,
+    *,
+    user_id: int = None,
 ):
     stmt =  (
         select(
@@ -136,6 +138,8 @@ async def get_auction_bidder(
         order_by(desc(BidInfo.amount)).
         limit(limit)
     )
+    if user_id is not None:
+        stmt = stmt.where(BidInfo.user_id == user_id)
     return [
         Bidder.model_validate(r)
         for r in (await session.execute(stmt))

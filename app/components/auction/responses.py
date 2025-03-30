@@ -40,6 +40,22 @@ get_auction_bids = {
     }
 }
 
+get_my_bid = {
+    HTTP_200_OK: {
+        "model": Bidder,
+        "description": "My bid."
+    },
+    HTTP_404_NOT_FOUND: {
+        "content": {
+            "application/json": {
+                "example": {"detail": "Bid not found."}
+            }
+        },
+        "description": "Bid not found."
+    },
+    **POSSIBLE_JWTCOOKIE_RESPONSE
+}
+
 create_an_auction = {
     HTTP_201_CREATED: {
         "model": AuctionCreated,

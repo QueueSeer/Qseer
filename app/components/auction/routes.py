@@ -140,6 +140,24 @@ async def streaming_auction_bids(
     )
 
 
+@router.get("/{auction_id}/bids/me", responses=res.get_my_bid)
+async def get_my_bid(
+    session: SessionDep,
+    payload: UserJWTDep,
+    auction_id: int
+):
+    '''
+    [User] ดูราคาเสนอของเราในการประมูล
+    '''
+    bidders = await get_auction_bidder(
+        session, auction_id, 1,
+        user_id=payload.sub
+    )
+    if not bidders:
+        raise NotFoundException("Bid not found.")
+    return bidders[0]
+
+
 @router.post(
     "/",
     status_code=201,
