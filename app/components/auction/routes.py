@@ -239,15 +239,17 @@ async def bid_auction(
     return await bidding_auction(session, payload.sub, auction_id, bid.amount)
 
 
-@router.post("/conclude", include_in_schema=False)
+@router.post("/conclude")
 async def conclude_an_auction(
     session: SessionDep,
     obj: AuctionCallback
 ):
     '''
     สรุปผลประมูลและสร้างการนัดหมาย Internal use
+
+    Front end ไม่ต้องใช้
     '''
     if obj.security_key != settings.TRIGGER_SECRET:
         raise HTTPException(403, "Nuh uh.")
 
-    return await conclude_auction(session, obj.auction_ID)
+    return await conclude_auction(session, obj.auction_ID, commit=True)

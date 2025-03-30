@@ -297,7 +297,8 @@ async def conclude_auction(
     *,
     seer_id: int = None,
     appoint_start_time: datetime = None,
-    appoint_end_time: datetime = None
+    appoint_end_time: datetime = None,
+    commit: bool = False
 ):
     if seer_id is None or appoint_start_time is None or appoint_end_time is None:
         stmt = (
@@ -352,6 +353,8 @@ async def conclude_auction(
             session, auction_id, highest_bid.user_id, apmt_id, commit=False
         )
     
+    if commit:
+        await session.commit()
     return apmt_id
 
 
