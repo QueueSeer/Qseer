@@ -151,7 +151,8 @@ async def streaming_bids(
     for _ in range(times):
         bids = await get_auction_bidder(session, auction_id)
         if bids != last:
-            yield json.dumps(bids) + "\n\n"
+            bidders = [b.model_dump(mode='json') for b in bids]
+            yield json.dumps(bidders) + "\n\n"
             last = bids
         await asyncio.sleep(1)
 
