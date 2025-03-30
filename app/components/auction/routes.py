@@ -239,7 +239,7 @@ async def bid_auction(
     return await bidding_auction(session, payload.sub, auction_id, bid.amount)
 
 
-@router.post("/conclude")
+@router.post("/conclude", include_in_schema=False)
 async def conclude_an_auction(
     session: SessionDep,
     obj: AuctionCallback
