@@ -45,7 +45,7 @@ class AppointmentBrief(BaseModel):
     id: int
     client: UserBrief
     seer: UserBrief
-    package: PackageBrief
+    package: PackageBrief | None
     start_time: datetime
     end_time: datetime
     status: ApmtStatus
@@ -58,6 +58,13 @@ class AppointmentBrief(BaseModel):
 
     @classmethod
     def create_from(cls, obj: Row):
+        if obj.package_id:
+            package_brief = PackageBrief(
+                seer_id=obj.seer_id, id=obj.package_id,
+                name=obj.package_name, category=obj.package_category
+            )
+        else:
+            package_brief = None
         return cls(
             id=obj.id,
             client=UserBrief(
@@ -68,10 +75,7 @@ class AppointmentBrief(BaseModel):
                 id=obj.seer_id, display_name=obj.seer_display_name,
                 image=obj.seer_image
             ),
-            package=PackageBrief(
-                seer_id=obj.seer_id, id=obj.package_id,
-                name=obj.package_name, category=obj.package_category
-            ),
+            package=package_brief,
             start_time=obj.start_time,
             end_time=obj.end_time,
             status=obj.status,
@@ -103,7 +107,7 @@ class AppointmentBrief(BaseModel):
             join(client, Appointment.client_id == client.id).
             join(seer_u, Appointment.seer_id == seer_u.id).
             join(Seer, seer_u.id == Seer.id).
-            join(Appointment.package)
+            join(Appointment.package, isouter=True)
         )
 
 
@@ -124,8 +128,15 @@ class AppointmentOut(AppointmentBrief):
         required_info = {
             r.name: req_dict[r.name]
             for r in FPRequiredData
-            if obj.required_data & int(r.value)
+            if obj.required_data and obj.required_data & int(r.value)
         }
+        if obj.package_id:
+            package_brief = PackageBrief(
+                seer_id=obj.seer_id, id=obj.package_id,
+                name=obj.package_name, category=obj.package_category
+            )
+        else:
+            package_brief = None
         return cls(
             id=obj.id,
             client=UserBriefExtra(
@@ -141,10 +152,7 @@ class AppointmentOut(AppointmentBrief):
                 socials_name=obj.socials_name,
                 socials_link=obj.socials_link
             ),
-            package=PackageBrief(
-                seer_id=obj.seer_id, id=obj.package_id,
-                name=obj.package_name, category=obj.package_category
-            ),
+            package=package_brief,
             start_time=obj.start_time,
             end_time=obj.end_time,
             status=obj.status,
@@ -180,7 +188,7 @@ class AppointmentPublic(BaseModel):
     start_time: datetime
     end_time: datetime
     status: ApmtStatus
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
