@@ -243,6 +243,7 @@ async def edit_auction(
     auction, is_started, is_ended = await get_auction_by_id_with_status(
         session, auction_id
     )
+    auction_old = auction.model_copy()
     
     if is_started:
         raise BadRequestException("Auction has already started.")
@@ -271,7 +272,8 @@ async def edit_auction(
     )
     rowcount = (await session.execute(stmt)).rowcount
     await session.execute(stmt)
-    await set_conclude_trigger(auction_id, auction.end_time)
+    if auction_old.end_time != auction.end_time:
+        await set_conclude_trigger(auction_id, auction.end_time)
     await session.commit()
     return rowcount
 
