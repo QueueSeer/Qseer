@@ -224,4 +224,4 @@ async def get_free_time_slots(
             available_slots.append((slot_start, slot_end))
             slot_start = slot_end + break_duration
 
-    return available_slots
+    return [a for a in available_slots if a[0] >= datetime.now(a[0].tzinfo)]
