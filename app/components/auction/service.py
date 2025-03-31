@@ -188,7 +188,7 @@ async def set_conclude_trigger(
     success = await trigger_auction(
         auction_id,
         end_time + dt.timedelta(seconds=1),
-        '/auction/conclude',
+        '/api/auction/conclude',
         settings.TRIGGER_SECRET
     )
     if not success:
