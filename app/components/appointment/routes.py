@@ -1,7 +1,7 @@
 from datetime import date
 import random
 from string import ascii_uppercase, digits
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy.exc import NoResultFound
 
 from app.core.deps import UserJWTDep, SeerJWTDep
@@ -55,7 +55,7 @@ async def get_sent_appointments(
         limit=limit
     )
 
- 
+
 @router.get("/received", responses=res.get_appointments)
 async def get_received_appointments(
     session: SessionDep,
@@ -153,7 +153,7 @@ async def user_cancel_appointment(
         raise BadRequestException(
             "Cannot cancel within 1 hour of appointment."
         )
-    
+
     cancel = await get_cancelled_count(session, payload.sub)
     await cancel_appointment(
         session,
@@ -212,12 +212,12 @@ async def get_seer_appointments(
 
     if (end_date - start_date).days + 1 > 90:
         raise BadRequestException("Date range must not exceed 90 days.")
-    
+
     return await get_appointments_in_date_range(
         session=session,
         seer_id=seer_id,
         start_date=start_date,
-        end_date=end_date,
+        end_date=end_date + timedelta(days=1),
         exclude_cancelled=True
     )
 
@@ -265,7 +265,21 @@ async def make_an_appointment(
     
     if row.question_limit >= 0 and len(apmt.questions) > row.question_limit:
         raise BadRequestException("Exceeded question limit.")
-    
+
+    # Check if user has an appointment at the same time
+    busy = await get_appointments_in_date_range(
+        session=session,
+        start_date=apmt.start_time,
+        end_date=apmt.start_time + row.duration,
+        user_id=payload.sub,
+        exclude_cancelled=True
+    )
+    if busy:
+        raise HTTPException(
+            status_code=409,  # HTTP_409_CONFLICT
+            detail="User already has an appointment at this time."
+        )
+
     stmt = (
         select(User.display_name).
         where(
@@ -278,7 +292,7 @@ async def make_an_appointment(
         user_display_name = (await session.scalars(stmt)).one()
     except NoResultFound:
         raise BadRequestException("Insufficient coins.")
-    
+
     code = ''.join(random.choices(ascii_uppercase + digits, k=6))
     apmt_id = await create_appointment(
         session,

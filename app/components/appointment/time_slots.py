@@ -28,12 +28,12 @@ class TimeRange(BaseModel):
 
 async def get_appointments_in_date_range(
     session: AsyncSession,
-    seer_id: int,
-    start_date: date,
-    end_date: date,
+    start_date: date | datetime,
+    end_date: date | datetime,
+    seer_id: int = None,
+    user_id: int = None,
     exclude_cancelled: bool = False
 ):
-    end_date = end_date + timedelta(days=1)
     stmt = (
         select(
             Appointment.id,
@@ -44,11 +44,14 @@ async def get_appointments_in_date_range(
             Appointment.status,
         ).
         where(
-            Appointment.seer_id == seer_id,
             Appointment.end_time > start_date,
             Appointment.start_time < end_date
         )
     )
+    if seer_id is not None:
+        stmt = stmt.where(Appointment.seer_id == seer_id)
+    if user_id is not None:
+        stmt = stmt.where(Appointment.client_id == user_id)
     if exclude_cancelled:
         stmt = stmt.where(
             Appointment.status != ApmtStatus.u_cancelled,
@@ -80,7 +83,7 @@ async def get_busy_time_ranges(
     return [
         TimeRange.model_validate(a)
         for a in (await get_appointments_in_date_range(
-            session, seer_id, start_date, end_date, True
+            session, start_date, end_date, seer_id, None, True
         ))
     ] + [
         TimeRange.model_validate(r)
@@ -140,7 +143,8 @@ async def get_free_time_slots(
     package_id: int,
     start_date: date,
     end_date: date,
-    package_duration: timedelta = None
+    package_duration: timedelta = None,
+    exclude_past: bool = True,
 ):
     stmt = (
         select(Seer.break_duration).
@@ -177,7 +181,7 @@ async def get_free_time_slots(
     )
 
     appointments = await get_busy_time_ranges(
-        session, seer_id, start_date, end_date
+        session, seer_id, start_date, end_date + timedelta(days=1)
     )
 
     stmt = (
@@ -224,4 +228,6 @@ async def get_free_time_slots(
             available_slots.append((slot_start, slot_end))
             slot_start = slot_end + break_duration
 
-    return [a for a in available_slots if a[0] >= datetime.now(a[0].tzinfo)]
+    if exclude_past:
+        return [a for a in available_slots if a[0] >= datetime.now(a[0].tzinfo)]
+    return available_slots
